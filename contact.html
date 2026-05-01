@@ -177,61 +177,56 @@ footer{margin-top:80px;border-top:1px solid var(--border);padding:48px 24px}
   </section>
 
   <section>
-    <div class="section-label">Get in touch <span class="section-meta">Response within 1 business day</span></div>
-    <div class="contact-grid">
-
-      <div class="contact-card">
-        <div class="card-label">Send a message</div>
-        <div id="formBody">
-          <div class="field-row">
-            <div class="field">
-              <label>Name</label>
-              <input type="text" id="fname" placeholder="Jan de Vries">
-            </div>
-            <div class="field">
-              <label>Company</label>
-              <input type="text" id="fcompany" placeholder="Your company">
-            </div>
+    <div class="section-label">Get in touch</div>
+    <div class="contact-card" style="max-width:560px">
+      <div class="card-label">Send a message</div>
+      <div id="formBody">
+        <div class="field-row">
+          <div class="field">
+            <label>Name</label>
+            <input type="text" id="fname" placeholder="Jan de Vries">
           </div>
           <div class="field">
-            <label>Email</label>
-            <input type="email" id="femail" placeholder="jan@company.com">
+            <label>Company</label>
+            <input type="text" id="fcompany" placeholder="Your company">
           </div>
-          <div class="field">
-            <label>Topic</label>
-            <select id="ftopic">
-              <option value="">Select a topic&hellip;</option>
-              <option>VC fundraising</option>
-              <option>Sell-side M&amp;A</option>
-              <option>Buy-side / acquisition</option>
-              <option>Market intelligence</option>
-              <option>Other</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Message</label>
-            <textarea id="fmessage" placeholder="Brief context about your company and what you're looking for&hellip;"></textarea>
-          </div>
-          <button class="submit-btn" onclick="handleSubmit()">Send message</button>
         </div>
-        <div class="success-state" id="successState">
-          <div class="success-icon">
-            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <h3>Message sent</h3>
-          <p>We'll get back to you within one business day.</p>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="femail" placeholder="jan@company.com">
         </div>
+        <div class="field">
+          <label>Topic</label>
+          <select id="ftopic">
+            <option value="">Select a topic&hellip;</option>
+            <option>VC fundraising</option>
+            <option>Sell-side M&amp;A</option>
+            <option>Buy-side / acquisition</option>
+            <option>Market intelligence</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Message</label>
+          <textarea id="fmessage" placeholder="Brief context about your company and what you're looking for&hellip;"></textarea>
+        </div>
+        <button class="submit-btn" onclick="handleSubmit()">Send message</button>
       </div>
-
-      <div style="display:flex;flex-direction:column;justify-content:center;gap:12px">
+      <div class="success-state" id="successState">
+        <div class="success-icon">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h3>Message sent</h3>
+        <p>We'll get back to you within one business day.</p>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
         <a href="https://goldfish.global" target="_blank" class="ext-btn" title="goldfish.global">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
         </a>
-        <a href="https://www.linkedin.com/in/abrienen" target="_blank" class="ext-btn" title="LinkedIn — Arjan Brienen">
+        <a href="https://www.linkedin.com/in/abrienen" target="_blank" class="ext-btn" title="LinkedIn &mdash; Arjan Brienen">
           <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-4 0v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
         </a>
       </div>
-
     </div>
   </section>
 
