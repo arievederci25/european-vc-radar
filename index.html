@@ -1053,7 +1053,20 @@ function renderAvgStageChart(){
     barPercentage:.7
   }));
   // Delta: total avg across all stages, first vs last quarter
-  const avgForQ=k=>{const[y,q]=k.split('-');const d=allDeals.filter(x=>x.year==y&&x.quarter==q&&['Seed','Series A','Series B'].includes(x.stage)&&x.amount_eur>0);return d.length?d.reduce((a,x)=>a+(x.amount_eur||0),0)/d.length:null};
+  // Weighted average: Σ(stage_avg × stage_count) / Σ(stage_count)
+  const avgForQ=k=>{
+    const[y,q]=k.split('-');
+    const stages=['Seed','Series A','Series B'];
+    let totalWeight=0,weightedSum=0;
+    stages.forEach(s=>{
+      const d=allDeals.filter(x=>x.year==y&&x.quarter==q&&x.stage===s&&x.amount_eur>0);
+      if(!d.length) return;
+      const avg=d.reduce((a,x)=>a+(x.amount_eur||0),0)/d.length;
+      weightedSum+=avg*d.length;
+      totalWeight+=d.length;
+    });
+    return totalWeight?parseFloat((weightedSum/totalWeight).toFixed(1)):null;
+  };
   const ql=quarters[quarters.length-1];
   const qf=quarters[0];
   const lbl=k=>{const[y,q]=k.split('-');return`Q${q}'${String(y).slice(2)}`};
