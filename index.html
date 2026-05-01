@@ -473,6 +473,17 @@ footer{
 }
 .empty-state h3{font-size:20px;font-weight:700;color:var(--mid);margin-bottom:8px}
 
+/* --- Chart period pills --- */
+.cp-pill{
+  padding:4px 10px;border-radius:var(--radius-pill);
+  font-size:11px;font-weight:600;
+  border:1.5px solid var(--border);background:var(--cream);
+  color:var(--mid);cursor:pointer;font-family:var(--font-body);
+  transition:all .15s;
+}
+.cp-pill:hover{border-color:var(--coral);color:var(--coral)}
+.cp-pill.on{background:var(--coral);border-color:var(--coral);color:#fff}
+
 /* --- Update banner --- */
 .update-banner{
   background:var(--cream-2);border:1px solid var(--border);
@@ -594,6 +605,7 @@ footer{
       </div>
       <div class="chart-card">
         <div class="chart-label">Avg Round Size by Stage per Quarter (&euro;M)</div>
+        <div id="avgStagePills" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:14px"></div>
         <div class="chart-wrap"><canvas id="avgStageChart"></canvas></div>
       </div>
       <div class="chart-card">
@@ -736,6 +748,7 @@ async function init(){
   allDeals = await loadAllDeals();
   buildYearOverview();
   buildQuarterGrid();
+  buildAvgStagePills();
   applyFilters();
   buildSectorFilters();
   bindEvents();
@@ -947,17 +960,46 @@ function renderCharts(){
   renderVelocityChart();
 }
 
+// Independent period selection for avg stage chart
+let avgStageSelected = new Set();
+
+function buildAvgStagePills(){
+  // All available quarters from allDeals
+  const nowQ=Math.ceil((new Date().getMonth()+1)/3), nowY=new Date().getFullYear();
+  const all=[];
+  for(let y=2020;y<=nowY;y++) for(let q=1;q<=4;q++){
+    if(y===nowY&&q>nowQ) break;
+    if(allDeals.some(d=>d.year===y&&d.quarter===q)) all.push(`${y}-${q}`);
+  }
+  // Default: last 4 quarters
+  if(avgStageSelected.size===0) all.slice(-4).forEach(k=>avgStageSelected.add(k));
+
+  const cont=document.getElementById('avgStagePills');
+  cont.innerHTML='';
+  all.forEach(k=>{
+    const [y,q]=k.split('-');
+    const btn=document.createElement('button');
+    btn.className='cp-pill'+(avgStageSelected.has(k)?' on':'');
+    btn.textContent=`Q${q}'${String(y).slice(2)}`;
+    btn.onclick=()=>{
+      avgStageSelected.has(k)?avgStageSelected.delete(k):avgStageSelected.add(k);
+      btn.classList.toggle('on');
+      renderAvgStageChart();
+    };
+    cont.appendChild(btn);
+  });
+}
+
 function renderAvgStageChart(){
   destroyChart('avgStage');
-  // Build sorted quarter list from filtered deals
-  const qSet=new Set(filteredDeals.map(d=>`${d.year}-${d.quarter}`));
-  const quarters=[...qSet].sort().slice(-8); // last 8 quarters max for readability
+  const quarters=[...avgStageSelected].sort();
+  if(!quarters.length) return;
   const stages=['Seed','Series A','Series B'];
   const datasets=stages.map(s=>({
     label:s,
     data:quarters.map(k=>{
       const [y,q]=k.split('-');
-      const deals=filteredDeals.filter(d=>d.year==y&&d.quarter==q&&d.stage===s&&d.amount_eur>0);
+      const deals=allDeals.filter(d=>d.year==y&&d.quarter==q&&d.stage===s&&d.amount_eur>0);
       return deals.length?parseFloat((deals.reduce((a,d)=>a+(d.amount_eur||0),0)/deals.length).toFixed(1)):null;
     }),
     backgroundColor:STAGE_COLORS[s],
