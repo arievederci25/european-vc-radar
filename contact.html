@@ -181,7 +181,7 @@ footer{margin-top:80px;border-top:1px solid var(--border);padding:48px 24px}
     <div class="contact-card" style="max-width:560px">
       <div class="card-label">Send a message</div>
 
-      <div data-fs-success class="success-state">
+      <div id="successState" class="success-state" style="display:none">
         <div class="success-icon">
           <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
@@ -189,14 +189,12 @@ footer{margin-top:80px;border-top:1px solid var(--border);padding:48px 24px}
         <p>We'll get back to you within one business day.</p>
       </div>
 
-      <div data-fs-error style="font-size:12px;color:var(--coral);margin-bottom:12px"></div>
-
-      <form id="contact-form">
+      <form id="contact-form" onsubmit="sendForm(event)">
         <div class="field-row">
           <div class="field">
             <label>Name</label>
-            <input type="text" name="name" data-fs-field placeholder="Jan de Vries" required>
-            <span data-fs-error="name" style="font-size:11px;color:var(--coral)"></span>
+            <input type="text" name="name" placeholder="Jan de Vries" required>
+
           </div>
           <div class="field">
             <label>Company</label>
@@ -205,8 +203,8 @@ footer{margin-top:80px;border-top:1px solid var(--border);padding:48px 24px}
         </div>
         <div class="field">
           <label>Email</label>
-          <input type="email" name="email" data-fs-field placeholder="jan@company.com" required>
-          <span data-fs-error="email" style="font-size:11px;color:var(--coral)"></span>
+          <input type="email" name="email" placeholder="jan@company.com" required>
+
         </div>
         <div class="field">
           <label>Topic</label>
@@ -221,10 +219,10 @@ footer{margin-top:80px;border-top:1px solid var(--border);padding:48px 24px}
         </div>
         <div class="field">
           <label>Message</label>
-          <textarea name="message" data-fs-field placeholder="Brief context about your company and what you're looking for&hellip;" required></textarea>
-          <span data-fs-error="message" style="font-size:11px;color:var(--coral)"></span>
+          <textarea name="message" placeholder="Brief context about your company and what you're looking for&hellip;" required></textarea>
+
         </div>
-        <button type="submit" class="submit-btn" data-fs-submit-btn>Send message</button>
+        <button type="submit" id="submitBtn" class="submit-btn">Send message</button>
       </form>
 
       <div style="display:flex;gap:10px;margin-top:20px">
@@ -253,10 +251,37 @@ footer{margin-top:80px;border-top:1px solid var(--border);padding:48px 24px}
 </footer>
 
 <script>
-  window.formspree = window.formspree || function () { (formspree.q = formspree.q || []).push(arguments); };
-  formspree('initForm', { formElement: '#contact-form', formId: 'xaqvnepw' });
+async function sendForm(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const name    = document.querySelector('[name="name"]').value.trim();
+  const email   = document.querySelector('[name="email"]').value.trim();
+  const message = document.querySelector('[name="message"]').value.trim();
+  if (!name || !email || !message) return;
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  try {
+    const res = await fetch('https://formspree.io/f/xaqvnepw', {
+      method: 'POST',
+      headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        email,
+        company: document.querySelector('[name="company"]').value.trim(),
+        topic:   document.querySelector('[name="topic"]').value,
+        message
+      })
+    });
+    if (!res.ok) throw new Error();
+    document.getElementById('contact-form').style.display = 'none';
+    document.getElementById('successState').style.display = 'block';
+  } catch {
+    btn.disabled = false;
+    btn.textContent = 'Send message';
+    alert('Something went wrong — please try again.');
+  }
+}
 </script>
-<script src="https://unpkg.com/@formspree/ajax@1" defer></script>
 </body>
 </html>
 
