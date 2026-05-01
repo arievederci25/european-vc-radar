@@ -210,7 +210,7 @@ footer{margin-top:80px;border-top:1px solid var(--border);padding:48px 24px}
           <label>Message</label>
           <textarea id="fmessage" placeholder="Brief context about your company and what you're looking for&hellip;"></textarea>
         </div>
-        <button class="submit-btn" onclick="handleSubmit()">Send message</button>
+        <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Send message</button>
       </div>
       <div class="success-state" id="successState">
         <div class="success-icon">
@@ -245,7 +245,7 @@ footer{margin-top:80px;border-top:1px solid var(--border);padding:48px 24px}
 </footer>
 
 <script>
-function handleSubmit() {
+async function handleSubmit() {
   const name    = document.getElementById('fname').value.trim();
   const email   = document.getElementById('femail').value.trim();
   const message = document.getElementById('fmessage').value.trim();
@@ -257,11 +257,23 @@ function handleSubmit() {
   }
   const company = document.getElementById('fcompany').value.trim();
   const topic   = document.getElementById('ftopic').value;
-  const subject = encodeURIComponent('VC Radar contact \u2014 ' + (topic || 'Inquiry'));
-  const body    = encodeURIComponent('Name: ' + name + '\nCompany: ' + (company||'\u2014') + '\nTopic: ' + (topic||'\u2014') + '\n\n' + message);
-  window.location.href = 'mailto:arjan@goldfish.global?subject=' + subject + '&body=' + body;
-  document.getElementById('formBody').style.display = 'none';
-  document.getElementById('successState').style.display = 'block';
+  const btn     = document.getElementById('submitBtn');
+  btn.disabled  = true;
+  btn.textContent = 'Sending\u2026';
+  try {
+    const res = await fetch('https://formspree.io/f/xaqvnepw', {
+      method: 'POST',
+      headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
+      body: JSON.stringify({name, email, company, topic, message})
+    });
+    if (!res.ok) throw new Error();
+    document.getElementById('formBody').style.display = 'none';
+    document.getElementById('successState').style.display = 'block';
+  } catch {
+    btn.disabled = false;
+    btn.textContent = 'Send message';
+    alert('Something went wrong \u2014 please try again.');
+  }
 }
 </script>
 </body>
