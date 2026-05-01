@@ -489,7 +489,7 @@ footer{
 <nav class="navbar">
   <a class="nav-brand" href="#">
     <div class="nav-logo">
-      <svg viewBox="0 0 24 24"><path d="M12 2L4 9v11h5v-6h6v6h5V9z"/></svg>
+      <svg viewBox="0 0 51 49"><path d="m30.388 34.796-9.8-9.8-9.8 9.8L1 25v19.592l9.8-9.8 9.8 9.8Z"/><path d="m49.981 15.204-9.8-9.8-9.8 9.8-9.8-9.8V25l9.8-9.8 9.8 9.8Z"/></svg>
     </div>
     VC Radar
   </a>
@@ -509,7 +509,7 @@ footer{
     Seed &bull; Series A &bull; Series B &bull; Growth
   </div>
   <h1>Where European<br><em>VC money moves</em></h1>
-  <p class="hero-sub">Track every significant funding round across Europe — from seed to growth — updated weekly, searchable by quarter.</p>
+  <p class="hero-sub">Track every significant funding round across Europe — from seed to growth — updated quarterly.</p>
   <div class="hero-actions">
     <button class="btn-primary" onclick="document.getElementById('quarter-selector').scrollIntoView({behavior:'smooth'})">Explore by Quarter</button>
     <button class="btn-ghost" onclick="document.getElementById('deals').scrollIntoView({behavior:'smooth'})">View All Deals →</button>
@@ -591,6 +591,10 @@ footer{
         <div class="chart-label">Round Size Distribution</div>
         <div class="chart-wrap"><canvas id="sizeChart"></canvas></div>
       </div>
+      <div class="chart-card wide">
+        <div class="chart-label">Average Round Size by Stage (€M)</div>
+        <div class="chart-wrap"><canvas id="avgStageChart"></canvas></div>
+      </div>
     </div>
   </section>
 
@@ -613,11 +617,6 @@ footer{
   <!-- DEALS TABLE -->
   <section id="deals">
     <div class="section-label">All Deals <span class="section-meta" id="dealCountLabel"></span></div>
-    <div class="update-banner">
-      <span>🔄</span>
-      <span><strong>Auto-updates monthly</strong> on the 1st of each month at 08:00 CET via Claude Code scheduled hook — last run: <span id="hookLastRun">checking…</span></span>
-    </div>
-
     <div class="table-toolbar">
       <div class="filter-group" id="stageFilters">
         <button class="filter-btn active" data-stage="all">All Stages</button>
@@ -659,11 +658,11 @@ footer{
 <footer>
   <div class="footer-inner">
     <div class="footer-brand">
-      <div class="nav-logo"><svg viewBox="0 0 24 24"><path d="M12 2L4 9v11h5v-6h6v6h5V9z"/></svg></div>
-      European VC Radar
+      <div class="nav-logo"><svg viewBox="0 0 51 49"><path d="m30.388 34.796-9.8-9.8-9.8 9.8L1 25v19.592l9.8-9.8 9.8 9.8Z"/><path d="m49.981 15.204-9.8-9.8-9.8 9.8-9.8-9.8V25l9.8-9.8 9.8 9.8Z"/></svg></div>
+      VC Radar
     </div>
     <div class="footer-meta">
-      Data sourced from <a href="https://eu-startups.com">EU-Startups</a>, <a href="https://tech.eu">Tech.eu</a>, <a href="https://sifted.eu">Sifted</a>, <a href="https://vestbee.com">Vestbee</a>, TechCrunch & Crunchbase. Powered by <a href="https://supabase.com">Supabase</a>. Built for <a href="https://goldfish.global">Goldfish</a>. Updated monthly via Claude Code scheduled task.
+      Information sourced from publicly available sources and is not complete. Only deals above €500K are listed. Powered by <a href="https://supabase.com">Supabase</a>. Built for <a href="https://goldfish.global">Goldfish</a>.
     </div>
   </div>
 </footer>
@@ -684,8 +683,8 @@ const STAGE_COLORS = {'Seed':'#2d7dd2','Series A':'#2ec4b6','Series B':'#e87461'
 let allDeals = [];
 let filteredDeals = [];
 let selectedPeriods = new Set(); // 'YYYY-Q' strings, empty = all
-let stageFilter = 'all';
-let sectorFilter = 'all';
+let stageFilters = new Set(); // empty = all
+let sectorFilters = new Set(); // empty = all
 let searchTerm = '';
 let sortCol = 'amount_eur';
 let sortDir = -1;
@@ -727,8 +726,7 @@ async function loadAllDeals(){
 // ── INIT ─────────────────────────────────────────────────────────────────────
 async function init(){
   getChartDefaults();
-  document.getElementById('lastUpdated').textContent = 'Updated Apr 8, 2026';
-  document.getElementById('hookLastRun').textContent  = 'Apr 8, 2026';
+  document.getElementById('lastUpdated').textContent = 'Updated Apr 28, 2026 (609 deals, €142.1B)';
 
   allDeals = await loadAllDeals();
   buildYearOverview();
@@ -817,10 +815,12 @@ function selectLast(nQ){
   selectedPeriods.clear();
   document.querySelectorAll('.q-pill').forEach(b=>b.classList.remove('selected'));
   document.querySelectorAll('.year-card').forEach(c=>c.classList.remove('active-year'));
-  // build last nQ quarters from 2026-Q1
+  // build all quarters up to and including the current quarter
+  const nowQ=Math.ceil((new Date().getMonth()+1)/3);
+  const nowY=new Date().getFullYear();
   const all=[];
-  for(let y=2020;y<=2026;y++) for(let q=1;q<=4;q++){
-    if(y===2026&&q>1) continue;
+  for(let y=2020;y<=nowY;y++) for(let q=1;q<=4;q++){
+    if(y===nowY&&q>nowQ) continue;
     all.push({y,q});
   }
   all.slice(-nQ).forEach(({y,q})=>{
@@ -840,13 +840,15 @@ function applyFilters(){
   if(selectedPeriods.size>0){
     data=data.filter(d=>selectedPeriods.has(`${d.year}-${d.quarter}`));
   }
-  // Stage
-  if(stageFilter!=='all'){
-    if(stageFilter==='other') data=data.filter(d=>!['Seed','Series A','Series B'].includes(d.stage));
-    else data=data.filter(d=>d.stage===stageFilter);
+  // Stage (multi-select)
+  if(stageFilters.size>0){
+    data=data.filter(d=>{
+      if(stageFilters.has('other')&&!['Seed','Series A','Series B'].includes(d.stage)) return true;
+      return stageFilters.has(d.stage);
+    });
   }
-  // Sector
-  if(sectorFilter!=='all') data=data.filter(d=>d.sector===sectorFilter);
+  // Sector (multi-select)
+  if(sectorFilters.size>0) data=data.filter(d=>sectorFilters.has(d.sector));
   // Search
   if(searchTerm){
     const q=searchTerm.toLowerCase();
@@ -913,9 +915,17 @@ function buildSectorFilters(){
     sectors.map(s=>`<button class="filter-btn" data-sector="${s}">${s}</button>`).join('');
   cont.querySelectorAll('.filter-btn').forEach(b=>{
     b.onclick=()=>{
-      cont.querySelectorAll('.filter-btn').forEach(x=>x.classList.remove('active'));
-      b.classList.add('active');
-      sectorFilter=b.dataset.sector;
+      const v=b.dataset.sector;
+      if(v==='all'){
+        sectorFilters.clear();
+        cont.querySelectorAll('.filter-btn').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+      } else {
+        cont.querySelector('[data-sector="all"]').classList.remove('active');
+        if(sectorFilters.has(v)){sectorFilters.delete(v);b.classList.remove('active');}
+        else{sectorFilters.add(v);b.classList.add('active');}
+        if(sectorFilters.size===0){sectorFilters.clear();cont.querySelector('[data-sector="all"]').classList.add('active');}
+      }
       applyFilters();
     };
   });
@@ -928,6 +938,26 @@ function renderCharts(){
   renderTimelineChart();
   renderCountryChart();
   renderSizeChart();
+  renderAvgStageChart();
+}
+
+function renderAvgStageChart(){
+  destroyChart('avgStage');
+  const stages=['Seed','Series A','Series B','Series C','Series D','Growth'];
+  const stats=stages.map(s=>{
+    const isGrowth=s==='Growth';
+    const known=['Seed','Series A','Series B','Series C','Series D'];
+    const deals=filteredDeals.filter(d=>isGrowth?!known.includes(d.stage):d.stage===s).filter(d=>d.amount_eur>0);
+    const avg=deals.length?deals.reduce((a,d)=>a+(d.amount_eur||0),0)/deals.length:0;
+    return{stage:s,avg:parseFloat(avg.toFixed(1)),count:deals.length};
+  }).filter(d=>d.count>0);
+  const colors=stats.map(d=>STAGE_COLORS[d.stage]||STAGE_COLORS['other']);
+  charts['avgStage']=new Chart(document.getElementById('avgStageChart'),{
+    type:'bar',
+    data:{labels:stats.map(d=>d.stage),datasets:[{label:'Avg Round Size (€M)',data:stats.map(d=>d.avg),backgroundColor:colors,borderRadius:8,barPercentage:.55}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`Avg: €${c.raw}M`,afterLabel:c=>`${stats[c.dataIndex].count} deals`}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:12,weight:'600'}}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'€'+v+'M'},beginAtZero:true}}}
+  });
 }
 
 function renderSectorChart(){
@@ -1073,9 +1103,17 @@ function bindEvents(){
   // Stage filter
   document.getElementById('stageFilters').querySelectorAll('.filter-btn').forEach(b=>{
     b.onclick=()=>{
-      document.getElementById('stageFilters').querySelectorAll('.filter-btn').forEach(x=>x.classList.remove('active'));
-      b.classList.add('active');
-      stageFilter=b.dataset.stage;
+      const v=b.dataset.stage;
+      if(v==='all'){
+        stageFilters.clear();
+        document.getElementById('stageFilters').querySelectorAll('.filter-btn').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+      } else {
+        document.getElementById('stageFilters').querySelector('[data-stage="all"]').classList.remove('active');
+        if(stageFilters.has(v)){stageFilters.delete(v);b.classList.remove('active');}
+        else{stageFilters.add(v);b.classList.add('active');}
+        if(stageFilters.size===0){stageFilters.clear();document.getElementById('stageFilters').querySelector('[data-stage="all"]').classList.add('active');}
+      }
       applyFilters();
     };
   });

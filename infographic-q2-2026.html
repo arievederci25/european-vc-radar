@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200">
+<title>European VC Radar — Q2 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #e8e6e0; font-family: 'Plus Jakarta Sans', sans-serif; color: #1a1805; display: flex; flex-direction: column; align-items: center; padding: 32px 0 48px; }
+
+  .download-btn {
+    display: flex; align-items: center; gap: 8px;
+    background: #1a1805; color: #faf8f4;
+    border: none; border-radius: 100px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 14px; font-weight: 700;
+    padding: 12px 24px; cursor: pointer;
+    margin-bottom: 24px;
+    letter-spacing: 0.2px;
+    transition: background 0.15s;
+  }
+  .download-btn:hover { background: #e87461; }
+  .download-btn.loading { opacity: 0.6; cursor: wait; }
+
+  .canvas {
+    width: 1200px;
+    background: #faf8f4;
+    display: flex;
+    flex-direction: column;
+    padding: 56px 60px 44px;
+    border-radius: 24px;
+    box-shadow: 0 8px 48px rgba(0,0,0,0.12);
+  }
+
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 36px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand svg { width: 38px; height: 37px; flex-shrink: 0; }
+  .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+  .brand-name { font-size: 17px; font-weight: 700; color: #1a1805; letter-spacing: -0.3px; }
+  .brand-sub { font-size: 12px; font-weight: 500; color: #888070; letter-spacing: 0.5px; text-transform: uppercase; }
+  .period-pill { background: #e87461; color: #fff; font-size: 13px; font-weight: 700; padding: 6px 16px; border-radius: 100px; }
+
+  .headline { margin-bottom: 20px; }
+  .headline h1 { font-size: 52px; font-weight: 800; color: #1a1805; line-height: 1.0; letter-spacing: -1.8px; }
+  .headline h1 span { color: #e87461; }
+  .headline p { font-size: 16px; font-weight: 500; color: #888070; margin-top: 10px; }
+
+  .observations { background: #1a1805; border-radius: 20px; padding: 22px 28px; margin-bottom: 20px; }
+  .observations .panel-label { color: rgba(250,248,244,0.45); margin-bottom: 12px; }
+  .obs-list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 32px; }
+  .obs-item { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; font-weight: 500; color: rgba(250,248,244,0.8); line-height: 1.5; }
+  .obs-dot { width: 7px; height: 7px; background: #e87461; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .obs-item strong { color: #faf8f4; font-weight: 700; }
+
+  .hero-stats { display: flex; gap: 16px; margin-bottom: 20px; }
+  .stat-card { flex: 1; background: #1a1805; border-radius: 20px; padding: 22px 28px; color: #faf8f4; }
+  .stat-card.coral { background: #e87461; }
+  .stat-value { font-size: 38px; font-weight: 800; letter-spacing: -1.5px; line-height: 1; margin-bottom: 6px; }
+  .stat-label { font-size: 12px; font-weight: 600; opacity: 0.7; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .panel { background: #fff; border-radius: 20px; padding: 22px; border: 1px solid rgba(26,24,5,0.07); }
+  .panel.span2 { grid-column: span 2; }
+  .panel-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #aaa090; margin-bottom: 14px; }
+
+  .sector-row { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; }
+  .sector-row:last-child { margin-bottom: 0; }
+  .sector-name { font-size: 13px; font-weight: 600; color: #1a1805; width: 72px; flex-shrink: 0; }
+  .sector-bar-wrap { flex: 1; height: 8px; background: rgba(26,24,5,0.08); border-radius: 99px; overflow: hidden; }
+  .sector-bar { height: 100%; background: #e87461; border-radius: 99px; }
+  .sector-count { font-size: 12px; font-weight: 700; color: #1a1805; width: 28px; text-align: right; flex-shrink: 0; }
+
+  .country-row { display: flex; align-items: center; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid rgba(26,24,5,0.06); }
+  .country-row:last-child { border-bottom: none; }
+  .country-name { font-size: 13px; font-weight: 600; color: #1a1805; }
+  .country-badge { background: #faf8f4; border-radius: 100px; padding: 3px 10px; font-size: 12px; font-weight: 700; color: #888070; }
+
+  .stage-grid { display: flex; flex-direction: column; gap: 9px; }
+  .stage-row { display: flex; align-items: center; gap: 10px; }
+  .stage-pill { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 100px; width: 82px; text-align: center; flex-shrink: 0; }
+  .pill-seed { background: #e8f5e9; color: #2e7d32; }
+  .pill-a { background: #e3f2fd; color: #1565c0; }
+  .pill-b { background: #fff3e0; color: #e65100; }
+  .pill-c { background: #fce4ec; color: #c62828; }
+  .pill-growth { background: #f3e5f5; color: #6a1b9a; }
+  .stage-bar-wrap { flex: 1; height: 8px; background: rgba(26,24,5,0.08); border-radius: 99px; overflow: hidden; }
+  .stage-bar { height: 100%; border-radius: 99px; }
+  .bar-seed { background: #4caf50; }
+  .bar-a { background: #2196f3; }
+  .bar-b { background: #ff9800; }
+  .bar-c { background: #f44336; }
+  .bar-growth { background: #9c27b0; }
+  .stage-num { font-size: 13px; font-weight: 700; color: #1a1805; width: 22px; text-align: right; flex-shrink: 0; }
+
+  .deal-row { display: flex; align-items: flex-start; gap: 12px; padding: 9px 0; border-bottom: 1px solid rgba(26,24,5,0.06); }
+  .deal-row:last-child { border-bottom: none; }
+  .deal-rank { font-size: 11px; font-weight: 800; color: #e87461; width: 18px; flex-shrink: 0; margin-top: 2px; }
+  .deal-info { flex: 1; }
+  .deal-company { font-size: 13px; font-weight: 700; color: #1a1805; }
+  .deal-meta { font-size: 11px; color: #aaa090; font-weight: 500; margin-top: 2px; }
+  .deal-amount { font-size: 14px; font-weight: 800; color: #1a1805; flex-shrink: 0; }
+
+  .footer { display: flex; align-items: center; justify-content: space-between; padding-top: 16px; border-top: 1px solid rgba(26,24,5,0.08); margin-top: 4px; gap: 24px; }
+  .footer-disclaimer { font-size: 11px; font-weight: 500; color: #aaa090; line-height: 1.5; flex: 1; }
+  .footer-logo { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .footer-logo svg { width: 22px; height: 21px; }
+  .footer-logo span { font-size: 12px; font-weight: 700; color: #888070; }
+</style>
+</head>
+<body>
+
+<button class="download-btn" id="pdfBtn" onclick="generatePDF()">
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+  </svg>
+  Download als PDF
+</button>
+
+<div class="canvas" id="infographic">
+
+  <div class="header">
+    <div class="brand">
+      <svg viewBox="0 0 51 49" fill="#1a1805" xmlns="http://www.w3.org/2000/svg">
+        <path d="m30.388 34.796-9.8-9.8-9.8 9.8L1 25v19.592l9.8-9.8 9.8 9.8Z"/>
+        <path d="m49.981 15.204-9.8-9.8-9.8 9.8-9.8-9.8V25l9.8-9.8 9.8 9.8Z"/>
+      </svg>
+      <div class="brand-text">
+        <div class="brand-name">Goldfish</div>
+        <div class="brand-sub">VC Radar</div>
+      </div>
+    </div>
+    <div class="period-pill">Q2 · April 2026</div>
+  </div>
+
+  <div class="headline">
+    <h1>European VC <span>in numbers.</span></h1>
+    <p>63 deals tracked across 18 countries — April 2026 update</p>
+  </div>
+
+  <div class="observations">
+    <div class="panel-label">Key observations</div>
+    <div class="obs-list">
+      <div class="obs-item">
+        <div class="obs-dot"></div>
+        <div><strong>Ineffable Intelligence</strong> raised a $1.1B Seed round — one of the largest seed rounds in European VC history</div>
+      </div>
+      <div class="obs-item">
+        <div class="obs-dot"></div>
+        <div><strong>DeepTech absorbed 84%</strong> of all capital deployed this quarter (€3.25B of €3.9B total)</div>
+      </div>
+      <div class="obs-item">
+        <div class="obs-dot"></div>
+        <div><strong>46% of all deals</strong> were Seed-stage — early-stage activity remains the dominant force in European VC</div>
+      </div>
+      <div class="obs-item">
+        <div class="obs-dot"></div>
+        <div><strong>UK claimed 22%</strong> of all deals tracked, maintaining its position as Europe's most active VC market</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat-card coral">
+      <div class="stat-value">€3.9B</div>
+      <div class="stat-label">Capital deployed</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">63</div>
+      <div class="stat-label">Deals tracked</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">18</div>
+      <div class="stat-label">Countries</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">€61.8M</div>
+      <div class="stat-label">Avg. round size</div>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <div class="panel">
+      <div class="panel-label">Top sectors · by deals</div>
+      <div class="sector-row">
+        <div class="sector-name">DeepTech</div>
+        <div class="sector-bar-wrap"><div class="sector-bar" style="width:100%"></div></div>
+        <div class="sector-count">12</div>
+      </div>
+      <div class="sector-row">
+        <div class="sector-name">SaaS</div>
+        <div class="sector-bar-wrap"><div class="sector-bar" style="width:75%"></div></div>
+        <div class="sector-count">9</div>
+      </div>
+      <div class="sector-row">
+        <div class="sector-name">FinTech</div>
+        <div class="sector-bar-wrap"><div class="sector-bar" style="width:67%"></div></div>
+        <div class="sector-count">8</div>
+      </div>
+      <div class="sector-row">
+        <div class="sector-name">AI</div>
+        <div class="sector-bar-wrap"><div class="sector-bar" style="width:42%"></div></div>
+        <div class="sector-count">5</div>
+      </div>
+      <div class="sector-row">
+        <div class="sector-name">HealthTech</div>
+        <div class="sector-bar-wrap"><div class="sector-bar" style="width:42%"></div></div>
+        <div class="sector-count">5</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-label">Top countries · by deals</div>
+      <div class="country-row">
+        <div class="country-name">United Kingdom</div>
+        <div class="country-badge">14 deals</div>
+      </div>
+      <div class="country-row">
+        <div class="country-name">Germany</div>
+        <div class="country-badge">7 deals</div>
+      </div>
+      <div class="country-row">
+        <div class="country-name">France</div>
+        <div class="country-badge">7 deals</div>
+      </div>
+      <div class="country-row">
+        <div class="country-name">Netherlands</div>
+        <div class="country-badge">5 deals</div>
+      </div>
+      <div class="country-row">
+        <div class="country-name">Finland</div>
+        <div class="country-badge">5 deals</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-label">Stage breakdown</div>
+      <div class="stage-grid">
+        <div class="stage-row">
+          <div class="stage-pill pill-seed">Seed</div>
+          <div class="stage-bar-wrap"><div class="stage-bar bar-seed" style="width:100%"></div></div>
+          <div class="stage-num">29</div>
+        </div>
+        <div class="stage-row">
+          <div class="stage-pill pill-a">Series A</div>
+          <div class="stage-bar-wrap"><div class="stage-bar bar-a" style="width:62%"></div></div>
+          <div class="stage-num">18</div>
+        </div>
+        <div class="stage-row">
+          <div class="stage-pill pill-growth">Growth</div>
+          <div class="stage-bar-wrap"><div class="stage-bar bar-growth" style="width:31%"></div></div>
+          <div class="stage-num">9</div>
+        </div>
+        <div class="stage-row">
+          <div class="stage-pill pill-b">Series B</div>
+          <div class="stage-bar-wrap"><div class="stage-bar bar-b" style="width:17%"></div></div>
+          <div class="stage-num">5</div>
+        </div>
+        <div class="stage-row">
+          <div class="stage-pill pill-c">Series C</div>
+          <div class="stage-bar-wrap"><div class="stage-bar bar-c" style="width:7%"></div></div>
+          <div class="stage-num">2</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel span2">
+      <div class="panel-label">Biggest deals this quarter</div>
+      <div class="deal-row">
+        <div class="deal-rank">#1</div>
+        <div class="deal-info">
+          <div class="deal-company">Nscale</div>
+          <div class="deal-meta">United Kingdom · DeepTech · Series C</div>
+        </div>
+        <div class="deal-amount">$2B</div>
+      </div>
+      <div class="deal-row">
+        <div class="deal-rank">#2</div>
+        <div class="deal-info">
+          <div class="deal-company">Ineffable Intelligence</div>
+          <div class="deal-meta">United Kingdom · DeepTech · Seed</div>
+        </div>
+        <div class="deal-amount">$1.1B</div>
+      </div>
+      <div class="deal-row">
+        <div class="deal-rank">#3</div>
+        <div class="deal-info">
+          <div class="deal-company">Xoople</div>
+          <div class="deal-meta">Spain · DeepTech · Series B</div>
+        </div>
+        <div class="deal-amount">$130M</div>
+      </div>
+      <div class="deal-row">
+        <div class="deal-rank">#4</div>
+        <div class="deal-info">
+          <div class="deal-company">Sereact</div>
+          <div class="deal-meta">Germany · DeepTech · Series B</div>
+        </div>
+        <div class="deal-amount">$110M</div>
+      </div>
+      <div class="deal-row">
+        <div class="deal-rank">#5</div>
+        <div class="deal-info">
+          <div class="deal-company">Verda</div>
+          <div class="deal-meta">Finland · DeepTech · Growth</div>
+        </div>
+        <div class="deal-amount">€100M</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">
+    <div class="footer-disclaimer">Information sourced from publicly available sources and is not complete. Only deals above €500K are listed. Powered by Supabase. Built for Goldfish.</div>
+    <div class="footer-logo">
+      <svg viewBox="0 0 51 49" fill="#aaa090" xmlns="http://www.w3.org/2000/svg">
+        <path d="m30.388 34.796-9.8-9.8-9.8 9.8L1 25v19.592l9.8-9.8 9.8 9.8Z"/>
+        <path d="m49.981 15.204-9.8-9.8-9.8 9.8-9.8-9.8V25l9.8-9.8 9.8 9.8Z"/>
+      </svg>
+      <span>goldfish.global</span>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+async function generatePDF() {
+  const btn = document.getElementById('pdfBtn');
+  btn.textContent = 'Bezig met genereren…';
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  await new Promise(r => setTimeout(r, 100)); // let fonts settle
+
+  const el = document.getElementById('infographic');
+  const canvas = await html2canvas(el, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: '#faf8f4',
+    logging: false
+  });
+
+  const imgData = canvas.toDataURL('image/png');
+  const { jsPDF } = window.jspdf;
+
+  // Square PDF matching the infographic proportions
+  const pxW = canvas.width;
+  const pxH = canvas.height;
+  const mmW = 297; // A4 landscape width, or use square
+  const mmH = Math.round((pxH / pxW) * mmW);
+
+  const pdf = new jsPDF({
+    orientation: mmW >= mmH ? 'landscape' : 'portrait',
+    unit: 'mm',
+    format: [mmW, mmH]
+  });
+
+  pdf.addImage(imgData, 'PNG', 0, 0, mmW, mmH);
+  pdf.save('vc-radar-q2-2026.pdf');
+
+  btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download als PDF';
+  btn.classList.remove('loading');
+  btn.disabled = false;
+}
+</script>
+</body>
+</html>
