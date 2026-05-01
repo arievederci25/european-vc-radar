@@ -180,24 +180,37 @@ footer{margin-top:80px;border-top:1px solid var(--border);padding:48px 24px}
     <div class="section-label">Get in touch</div>
     <div class="contact-card" style="max-width:560px">
       <div class="card-label">Send a message</div>
-      <div id="formBody">
+
+      <div data-fs-success class="success-state">
+        <div class="success-icon">
+          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <h3>Message sent</h3>
+        <p>We'll get back to you within one business day.</p>
+      </div>
+
+      <div data-fs-error style="font-size:12px;color:var(--coral);margin-bottom:12px"></div>
+
+      <form id="contact-form">
         <div class="field-row">
           <div class="field">
             <label>Name</label>
-            <input type="text" id="fname" placeholder="Jan de Vries">
+            <input type="text" name="name" data-fs-field placeholder="Jan de Vries" required>
+            <span data-fs-error="name" style="font-size:11px;color:var(--coral)"></span>
           </div>
           <div class="field">
             <label>Company</label>
-            <input type="text" id="fcompany" placeholder="Your company">
+            <input type="text" name="company" placeholder="Your company">
           </div>
         </div>
         <div class="field">
           <label>Email</label>
-          <input type="email" id="femail" placeholder="jan@company.com">
+          <input type="email" name="email" data-fs-field placeholder="jan@company.com" required>
+          <span data-fs-error="email" style="font-size:11px;color:var(--coral)"></span>
         </div>
         <div class="field">
           <label>Topic</label>
-          <select id="ftopic">
+          <select name="topic">
             <option value="">Select a topic&hellip;</option>
             <option>VC fundraising</option>
             <option>Sell-side M&amp;A</option>
@@ -208,17 +221,12 @@ footer{margin-top:80px;border-top:1px solid var(--border);padding:48px 24px}
         </div>
         <div class="field">
           <label>Message</label>
-          <textarea id="fmessage" placeholder="Brief context about your company and what you're looking for&hellip;"></textarea>
+          <textarea name="message" data-fs-field placeholder="Brief context about your company and what you're looking for&hellip;" required></textarea>
+          <span data-fs-error="message" style="font-size:11px;color:var(--coral)"></span>
         </div>
-        <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">Send message</button>
-      </div>
-      <div class="success-state" id="successState">
-        <div class="success-icon">
-          <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
-        <h3>Message sent</h3>
-        <p>We'll get back to you within one business day.</p>
-      </div>
+        <button type="submit" class="submit-btn" data-fs-submit-btn>Send message</button>
+      </form>
+
       <div style="display:flex;gap:10px;margin-top:20px">
         <a href="https://goldfish.global" target="_blank" class="ext-btn" title="goldfish.global">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
@@ -245,37 +253,10 @@ footer{margin-top:80px;border-top:1px solid var(--border);padding:48px 24px}
 </footer>
 
 <script>
-async function handleSubmit() {
-  const name    = document.getElementById('fname').value.trim();
-  const email   = document.getElementById('femail').value.trim();
-  const message = document.getElementById('fmessage').value.trim();
-  if (!name || !email || !message) {
-    const el = !name ? 'fname' : !email ? 'femail' : 'fmessage';
-    document.getElementById(el).focus();
-    document.getElementById(el).style.borderColor = 'var(--coral)';
-    return;
-  }
-  const company = document.getElementById('fcompany').value.trim();
-  const topic   = document.getElementById('ftopic').value;
-  const btn     = document.getElementById('submitBtn');
-  btn.disabled  = true;
-  btn.textContent = 'Sending\u2026';
-  try {
-    const res = await fetch('https://formspree.io/f/xaqvnepw', {
-      method: 'POST',
-      headers: {'Accept': 'application/json', 'Content-Type': 'application/json'},
-      body: JSON.stringify({name, email, company, topic, message})
-    });
-    if (!res.ok) throw new Error();
-    document.getElementById('formBody').style.display = 'none';
-    document.getElementById('successState').style.display = 'block';
-  } catch {
-    btn.disabled = false;
-    btn.textContent = 'Send message';
-    alert('Something went wrong \u2014 please try again.');
-  }
-}
+  window.formspree = window.formspree || function () { (formspree.q = formspree.q || []).push(arguments); };
+  formspree('initForm', { formElement: '#contact-form', formId: 'xaqvnepw' });
 </script>
+<script src="https://unpkg.com/@formspree/ajax@1" defer></script>
 </body>
 </html>
 
