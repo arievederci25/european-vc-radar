@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VC Radar &mdash; LinkedIn Hero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1584px;height:396px;overflow:hidden}
+
+body{
+  font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+  background:#1a1805;
+  color:#faf8f4;
+  position:relative;
+}
+
+/* ── Background grid lines ── */
+.grid{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(250,248,244,0.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(250,248,244,0.04) 1px,transparent 1px);
+  background-size:60px 60px;
+}
+
+/* ── Coral glow blob ── */
+.glow{
+  position:absolute;
+  right:-60px;top:-80px;
+  width:500px;height:500px;
+  background:radial-gradient(circle,rgba(232,116,97,0.28) 0%,transparent 70%);
+  pointer-events:none;
+}
+.glow2{
+  position:absolute;
+  left:300px;bottom:-120px;
+  width:360px;height:360px;
+  background:radial-gradient(circle,rgba(45,125,210,0.14) 0%,transparent 70%);
+  pointer-events:none;
+}
+
+/* ── Layout ── */
+.inner{
+  position:relative;z-index:1;
+  width:100%;height:100%;
+  display:flex;align-items:center;
+  padding:0 80px;
+  gap:0;
+}
+
+/* ── Left: branding ── */
+.left{
+  flex:0 0 540px;
+  display:flex;flex-direction:column;
+  gap:20px;
+}
+
+.logo-row{
+  display:flex;align-items:center;gap:14px;
+}
+.logo-box{
+  width:44px;height:44px;
+  background:#e87461;
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.logo-box svg{width:26px;height:26px;fill:white}
+.brand-name{
+  font-size:22px;font-weight:800;
+  color:#faf8f4;letter-spacing:-0.02em;
+}
+
+.headline{
+  font-size:52px;font-weight:800;
+  line-height:1.0;
+  letter-spacing:-0.03em;
+  color:#faf8f4;
+}
+.headline em{
+  font-style:normal;
+  color:#e87461;
+}
+
+.sub{
+  font-size:15px;font-weight:400;
+  color:rgba(250,248,244,0.55);
+  line-height:1.5;
+  max-width:420px;
+}
+
+.tags{
+  display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;
+}
+.tag{
+  padding:5px 14px;
+  border:1px solid rgba(250,248,244,0.12);
+  border-radius:999px;
+  font-size:12px;font-weight:600;
+  color:rgba(250,248,244,0.6);
+  letter-spacing:.04em;
+}
+
+/* ── Divider ── */
+.divider{
+  width:1px;height:260px;
+  background:rgba(250,248,244,0.08);
+  margin:0 64px;
+  flex-shrink:0;
+}
+
+/* ── Right: stats ── */
+.right{
+  flex:1;
+  display:flex;flex-direction:column;
+  gap:28px;
+}
+
+.stats-row{
+  display:flex;gap:48px;
+}
+.stat{}
+.stat-val{
+  font-size:38px;font-weight:800;
+  font-family:'JetBrains Mono',monospace;
+  color:#faf8f4;
+  letter-spacing:-0.03em;
+  line-height:1;
+}
+.stat-val span{color:#e87461}
+.stat-label{
+  font-size:11px;font-weight:600;
+  color:rgba(250,248,244,0.4);
+  text-transform:uppercase;letter-spacing:.1em;
+  margin-top:4px;
+}
+
+/* ── Mini chart bars ── */
+.chart-area{
+  display:flex;flex-direction:column;gap:8px;
+}
+.chart-label-row{
+  font-size:10px;font-weight:600;
+  color:rgba(250,248,244,0.3);
+  text-transform:uppercase;letter-spacing:.1em;
+}
+.bars{
+  display:flex;align-items:flex-end;gap:5px;height:64px;
+}
+.bar{
+  flex:1;border-radius:3px 3px 0 0;
+  background:#e87461;
+  opacity:0.7;
+  transition:opacity .2s;
+  position:relative;
+}
+/* bar heights representing quarterly deal flow */
+.b1{height:28%}.b2{height:35%}.b3{height:30%}.b4{height:42%}
+.b5{height:38%}.b6{height:55%}.b7{height:48%}.b8{height:60%}
+.b9{height:52%}.b10{height:68%}.b11{height:58%}.b12{height:72%}
+.b13{height:62%}.b14{height:85%}.b15{height:90%}.b16{height:75%}
+.b16{opacity:1;background:#e87461}
+
+.bar-labels{
+  display:flex;gap:5px;
+}
+.bar-labels span{
+  flex:1;font-size:9px;font-weight:500;
+  color:rgba(250,248,244,0.25);
+  text-align:center;
+  font-family:'JetBrains Mono',monospace;
+}
+
+/* ── Footer strip ── */
+.footer-strip{
+  position:absolute;bottom:0;left:0;right:0;
+  height:36px;
+  border-top:1px solid rgba(250,248,244,0.06);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 80px;
+  z-index:2;
+}
+.footer-strip span{
+  font-size:11px;font-weight:500;
+  color:rgba(250,248,244,0.25);
+  letter-spacing:.04em;
+}
+.footer-strip .dot{
+  display:inline-block;
+  width:5px;height:5px;border-radius:50%;
+  background:#e87461;
+  margin-right:8px;
+  animation:pulse 2s infinite;
+}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</head>
+<body>
+<div class="grid"></div>
+<div class="glow"></div>
+<div class="glow2"></div>
+
+<div class="inner">
+
+  <!-- LEFT -->
+  <div class="left">
+    <div class="logo-row">
+      <div class="logo-box">
+        <svg viewBox="0 0 51 49"><path d="m30.388 34.796-9.8-9.8-9.8 9.8L1 25v19.592l9.8-9.8 9.8 9.8Z"/><path d="m49.981 15.204-9.8-9.8-9.8 9.8-9.8-9.8V25l9.8-9.8 9.8 9.8Z"/></svg>
+      </div>
+      <span class="brand-name">VC Radar</span>
+    </div>
+
+    <div class="headline">Where European<br><em>VC money moves</em></div>
+
+    <p class="sub">Track every significant funding round across Europe &mdash; from seed to growth.</p>
+
+    <div class="tags">
+      <span class="tag">Seed</span>
+      <span class="tag">Series A</span>
+      <span class="tag">Series B</span>
+      <span class="tag">Growth</span>
+      <span class="tag">609 deals tracked</span>
+    </div>
+  </div>
+
+  <!-- DIVIDER -->
+  <div class="divider"></div>
+
+  <!-- RIGHT -->
+  <div class="right">
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-val"><span>&euro;</span>142B+</div>
+        <div class="stat-label">Capital tracked</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">609</div>
+        <div class="stat-label">Funding rounds</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val">30+</div>
+        <div class="stat-label">Countries</div>
+      </div>
+    </div>
+
+    <div class="chart-area">
+      <div class="chart-label-row">Quarterly deal flow &mdash; 2020 to 2026</div>
+      <div class="bars">
+        <div class="bar b1"></div>
+        <div class="bar b2"></div>
+        <div class="bar b3"></div>
+        <div class="bar b4"></div>
+        <div class="bar b5"></div>
+        <div class="bar b6"></div>
+        <div class="bar b7"></div>
+        <div class="bar b8"></div>
+        <div class="bar b9"></div>
+        <div class="bar b10"></div>
+        <div class="bar b11"></div>
+        <div class="bar b12"></div>
+        <div class="bar b13"></div>
+        <div class="bar b14"></div>
+        <div class="bar b15"></div>
+        <div class="bar b16"></div>
+      </div>
+      <div class="bar-labels">
+        <span>Q1'20</span><span></span><span></span><span>Q4'20</span>
+        <span>Q1'21</span><span></span><span></span><span>Q4'21</span>
+        <span>Q1'22</span><span></span><span></span><span>Q4'22</span>
+        <span>Q1'23</span><span></span><span></span><span>Q4'23</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FOOTER STRIP -->
+<div class="footer-strip">
+  <span><span class="dot"></span>Live data &mdash; updated quarterly</span>
+  <span>goldfish.global &nbsp;&bull;&nbsp; european-vc-radar</span>
+</div>
+
+</body>
+</html>
