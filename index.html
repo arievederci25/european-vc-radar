@@ -944,9 +944,9 @@ function renderCharts(){
 
 function renderAvgStageChart(){
   destroyChart('avgStage');
-  const stages=['Seed','Series A','Series B','Series C','Series D','Growth'];
+  const stages=['Seed','Series A','Series B'];
   const stats=stages.map(s=>{
-    const isGrowth=s==='Growth';
+    const isGrowth=false;
     const known=['Seed','Series A','Series B','Series C','Series D'];
     const deals=filteredDeals.filter(d=>isGrowth?!known.includes(d.stage):d.stage===s).filter(d=>d.amount_eur>0);
     const avg=deals.length?deals.reduce((a,d)=>a+(d.amount_eur||0),0)/deals.length:0;
