@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>European VC Radar — Where Money Moves</title>
+<title>European VC Radar &mdash; Where Money Moves</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
-/* ─── DESIGN TOKENS (Goldfish-inspired) ─── */
+/* --- DESIGN TOKENS (Goldfish-inspired) --- */
 :root {
   --cream:    #faf8f4;
   --cream-2:  #f2ede6;
@@ -43,7 +43,7 @@ body{
   overflow-x:hidden;
 }
 
-/* ─── NAVBAR ─── */
+/* --- NAVBAR --- */
 .navbar{
   position:fixed;top:20px;left:50%;transform:translateX(-50%);
   z-index:1000;
@@ -86,7 +86,7 @@ body{
 }
 .nav-cta:hover{background:var(--coral)}
 
-/* ─── HERO ─── */
+/* --- HERO --- */
 .hero{
   padding:160px 24px 80px;
   text-align:center;
@@ -143,11 +143,11 @@ body{
 }
 .btn-ghost:hover{background:var(--white);border-color:var(--dark)}
 
-/* ─── MAIN CONTAINER ─── */
+/* --- MAIN CONTAINER --- */
 .container{max-width:1280px;margin:0 auto;padding:0 24px}
 section{margin-bottom:80px}
 
-/* ─── QUARTER SELECTOR ─── */
+/* --- QUARTER SELECTOR --- */
 .quarter-section{
   background:var(--white);
   border:1px solid var(--border);
@@ -190,7 +190,7 @@ section{margin-bottom:80px}
 .q-pill.selected{background:var(--coral);border-color:var(--coral);color:white}
 .q-pill.has-data::after{content:'';display:inline-block;width:4px;height:4px;border-radius:50%;background:currentColor;margin-left:5px;opacity:.7}
 
-/* ─── STATS BAND ─── */
+/* --- STATS BAND --- */
 .stats-band{
   display:grid;grid-template-columns:repeat(4,1fr);
   gap:1px;background:var(--border);
@@ -220,7 +220,7 @@ section{margin-bottom:80px}
   text-transform:uppercase;letter-spacing:.1em;
 }
 
-/* ─── SECTION LABEL ─── */
+/* --- SECTION LABEL --- */
 .section-label{
   font-size:11px;font-weight:700;
   color:var(--light);text-transform:uppercase;letter-spacing:.12em;
@@ -235,7 +235,7 @@ section{margin-bottom:80px}
   text-transform:none;letter-spacing:0;
 }
 
-/* ─── CHART GRID ─── */
+/* --- CHART GRID --- */
 .chart-grid{
   display:grid;grid-template-columns:repeat(2,1fr);
   gap:20px;
@@ -256,7 +256,7 @@ section{margin-bottom:80px}
 .chart-wrap{position:relative;height:260px}
 .chart-wrap.tall{height:320px}
 
-/* ─── SECTOR BARS ─── */
+/* --- SECTOR BARS --- */
 .sector-bars{display:flex;flex-direction:column;gap:14px}
 .sbar-row{display:grid;grid-template-columns:160px 1fr 80px;align-items:center;gap:12px}
 .sbar-label{font-size:13px;font-weight:500;color:var(--dark)}
@@ -266,7 +266,7 @@ section{margin-bottom:80px}
 .sbar-fill{height:100%;border-radius:var(--radius-pill);transition:width 1s cubic-bezier(.4,0,.2,1)}
 .sbar-val{font-size:12px;font-weight:700;color:var(--dark);font-family:var(--font-mono);text-align:right}
 
-/* ─── INVESTOR GRID ─── */
+/* --- INVESTOR GRID --- */
 .investor-grid{
   display:grid;grid-template-columns:repeat(3,1fr);
   gap:16px;
@@ -291,7 +291,7 @@ section{margin-bottom:80px}
 .inv-stat span{font-size:18px;font-weight:800;color:var(--dark);font-family:var(--font-mono)}
 .inv-companies{font-size:11px;color:var(--light);line-height:1.5}
 
-/* ─── DEAL TABLE ─── */
+/* --- DEAL TABLE --- */
 .table-toolbar{
   display:flex;gap:8px;flex-wrap:wrap;
   margin-bottom:20px;align-items:center;
@@ -388,7 +388,7 @@ section{margin-bottom:80px}
   max-width:260px;line-height:1.5;
 }
 
-/* ─── LOADING ─── */
+/* --- LOADING --- */
 .loading-overlay{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   padding:80px;gap:16px;
@@ -403,7 +403,7 @@ section{margin-bottom:80px}
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* ─── YEAR OVERVIEW ─── */
+/* --- YEAR OVERVIEW --- */
 .year-overview-grid{
   display:grid;grid-template-columns:repeat(7,1fr);gap:10px;
   margin-bottom:48px;
@@ -429,7 +429,7 @@ section{margin-bottom:80px}
 .yc-total{font-size:13px;font-weight:700;color:var(--coral);font-family:var(--font-mono);margin-bottom:2px}
 .yc-deals{font-size:11px;color:var(--light)}
 
-/* ─── FOOTER ─── */
+/* --- FOOTER --- */
 footer{
   margin-top:80px;
   border-top:1px solid var(--border);
@@ -447,7 +447,7 @@ footer{
 .footer-meta{font-size:12px;color:var(--light);line-height:1.7;max-width:500px}
 .footer-meta a{color:var(--coral);text-decoration:none}
 
-/* ─── RESPONSIVE ─── */
+/* --- RESPONSIVE --- */
 @media(max-width:900px){
   .chart-grid{grid-template-columns:1fr}
   .chart-card.wide{grid-column:1}
@@ -466,14 +466,14 @@ footer{
   .sbar-row{grid-template-columns:120px 1fr 60px}
 }
 
-/* ─── EMPTY STATE ─── */
+/* --- EMPTY STATE --- */
 .empty-state{
   padding:60px;text-align:center;
   color:var(--light);font-size:14px;
 }
 .empty-state h3{font-size:20px;font-weight:700;color:var(--mid);margin-bottom:8px}
 
-/* ─── Update banner ─── */
+/* --- Update banner --- */
 .update-banner{
   background:var(--cream-2);border:1px solid var(--border);
   border-radius:var(--radius);padding:14px 20px;
@@ -500,7 +500,7 @@ footer{
     <button class="nav-link" onclick="document.getElementById('charts').scrollIntoView({behavior:'smooth'})">Analytics</button>
     <a class="nav-link" href="contact.html">Contact</a>
   </div>
-  <span id="lastUpdated" style="font-size:11px;color:var(--light);font-weight:500">Loading…</span>
+  <span id="lastUpdated" style="font-size:11px;color:var(--light);font-weight:500">Loading&hellip;</span>
 </nav>
 
 <!-- HERO -->
@@ -510,10 +510,10 @@ footer{
     Seed &bull; Series A &bull; Series B &bull; Growth
   </div>
   <h1>Where European<br><em>VC money moves</em></h1>
-  <p class="hero-sub">Track every significant funding round across Europe — from seed to growth — updated quarterly.</p>
+  <p class="hero-sub">Track every significant funding round across Europe &mdash; from seed to growth &mdash; updated quarterly.</p>
   <div class="hero-actions">
     <button class="btn-primary" onclick="document.getElementById('quarter-selector').scrollIntoView({behavior:'smooth'})">Explore by Quarter</button>
-    <button class="btn-ghost" onclick="document.getElementById('deals').scrollIntoView({behavior:'smooth'})">View All Deals →</button>
+    <button class="btn-ghost" onclick="document.getElementById('deals').scrollIntoView({behavior:'smooth'})">View All Deals &rarr;</button>
   </div>
 </header>
 
@@ -551,19 +551,19 @@ footer{
   <!-- STATS BAND -->
   <div class="stats-band">
     <div class="stat-item">
-      <div class="stat-value" id="statDeals">—</div>
+      <div class="stat-value" id="statDeals">&mdash;</div>
       <div class="stat-label">Deals</div>
     </div>
     <div class="stat-item">
-      <div class="stat-value" id="statCapital">—</div>
+      <div class="stat-value" id="statCapital">&mdash;</div>
       <div class="stat-label">Total Capital</div>
     </div>
     <div class="stat-item">
-      <div class="stat-value" id="statMedian">—</div>
+      <div class="stat-value" id="statMedian">&mdash;</div>
       <div class="stat-label">Median Round</div>
     </div>
     <div class="stat-item">
-      <div class="stat-value" id="statCountries">—</div>
+      <div class="stat-value" id="statCountries">&mdash;</div>
       <div class="stat-label">Countries</div>
     </div>
   </div>
@@ -581,7 +581,7 @@ footer{
         <div class="chart-wrap"><canvas id="stageChart"></canvas></div>
       </div>
       <div class="chart-card wide">
-        <div class="chart-label">Quarterly Capital Flow (€M)</div>
+        <div class="chart-label">Quarterly Capital Flow (&euro;M)</div>
         <div class="chart-wrap tall"><canvas id="timelineChart"></canvas></div>
       </div>
       <div class="chart-card">
@@ -593,7 +593,7 @@ footer{
         <div class="chart-wrap"><canvas id="sizeChart"></canvas></div>
       </div>
       <div class="chart-card wide">
-        <div class="chart-label">Average Round Size by Stage (€M)</div>
+        <div class="chart-label">Average Round Size by Stage (&euro;M)</div>
         <div class="chart-wrap"><canvas id="avgStageChart"></canvas></div>
       </div>
     </div>
@@ -627,8 +627,8 @@ footer{
         <button class="filter-btn" data-stage="other">Growth +</button>
       </div>
       <div class="search-box">
-        <span class="search-icon">🔍</span>
-        <input class="search-input" id="searchInput" type="text" placeholder="Search company, investor, sector, country…">
+        <span class="search-icon">&#x1F50D;</span>
+        <input class="search-input" id="searchInput" type="text" placeholder="Search company, investor, sector, country&hellip;">
       </div>
     </div>
 
@@ -640,7 +640,7 @@ footer{
           <tr>
             <th data-col="company">Company</th>
             <th data-col="stage">Stage</th>
-            <th data-col="amount_eur">Amount ↕</th>
+            <th data-col="amount_eur">Amount &#x2195;</th>
             <th data-col="sector">Sector</th>
             <th data-col="lead_investor">Lead Investor</th>
             <th data-col="year">Year</th>
@@ -648,7 +648,7 @@ footer{
           </tr>
         </thead>
         <tbody id="dealTableBody">
-          <tr><td colspan="7"><div class="loading-overlay"><div class="spinner"></div><span>Loading deals from Supabase…</span></div></td></tr>
+          <tr><td colspan="7"><div class="loading-overlay"><div class="spinner"></div><span>Loading deals from Supabase&hellip;</span></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -663,13 +663,13 @@ footer{
       VC Radar
     </div>
     <div class="footer-meta">
-      Information sourced from publicly available sources and is not complete. Only deals above €500K are listed. Powered by <a href="https://supabase.com">Supabase</a>. Built for <a href="https://goldfish.global">Goldfish</a>.
+      Information sourced from publicly available sources and is not complete. Only deals above &euro;500K are listed. Powered by <a href="https://supabase.com">Supabase</a>. Built for <a href="https://goldfish.global">Goldfish</a>.
     </div>
   </div>
 </footer>
 
 <script>
-// ── CONFIG ──────────────────────────────────────────────────────────────────
+// -- CONFIG ------------------------------------------------------------------
 const SUPABASE_URL  = 'https://swhjffkhhwktrvwiqmoe.supabase.co';
 const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3aGpmZmtoaHdrdHJ2d2lxbW9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTY5NDYsImV4cCI6MjA5MDc5Mjk0Nn0.XjNLCy3Fahc9AlitTpLWMQFRFC8HXh3OVT5iaIeFrNE';
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -680,7 +680,7 @@ const SECTOR_COLORS = ['#e87461','#d4604e','#c94e3a','#f0a090','#f5c5bc','#8b3a2
 const STAGE_COLORS = {'Seed':'#2d7dd2','Series A':'#2ec4b6','Series B':'#e87461',
   'Series C':'#d4604e','Series D':'#8b3a2f','other':'#a09888'};
 
-// ── STATE ────────────────────────────────────────────────────────────────────
+// -- STATE --------------------------------------------------------------------
 let allDeals = [];
 let filteredDeals = [];
 let selectedPeriods = new Set(); // 'YYYY-Q' strings, empty = all
@@ -691,9 +691,9 @@ let sortCol = 'amount_eur';
 let sortDir = -1;
 let charts = {};
 
-// ── HELPERS ──────────────────────────────────────────────────────────────────
-const fmt  = (n,d=0)=> n==null?'—':'€'+Number(n).toLocaleString('en',{maximumFractionDigits:d})+'M';
-const fmtB = n=> n==null?'—': n>=1000 ? '€'+(n/1000).toFixed(1)+'B' : '€'+Math.round(n)+'M';
+// -- HELPERS ------------------------------------------------------------------
+const fmt  = (n,d=0)=> n==null?'\u2014':'\u20AC'+Number(n).toLocaleString('en',{maximumFractionDigits:d})+'M';
+const fmtB = n=> n==null?'\u2014': n>=1000 ? '\u20AC'+(n/1000).toFixed(1)+'B' : '\u20AC'+Math.round(n)+'M';
 
 function stageBadge(s){
   let cls='badge-other';
@@ -717,17 +717,17 @@ function getChartDefaults(){
 
 function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id]}}
 
-// ── LOAD DATA ────────────────────────────────────────────────────────────────
+// -- LOAD DATA ----------------------------------------------------------------
 async function loadAllDeals(){
   const {data,error} = await db.from('deals').select('*').order('year').order('quarter').order('amount_eur',{ascending:false});
   if(error){console.error(error);return[]}
   return data;
 }
 
-// ── INIT ─────────────────────────────────────────────────────────────────────
+// -- INIT ---------------------------------------------------------------------
 async function init(){
   getChartDefaults();
-  document.getElementById('lastUpdated').textContent = 'Updated Apr 28, 2026 (609 deals, €142.1B)';
+  document.getElementById('lastUpdated').textContent = 'Updated Apr 28, 2026 (609 deals, \u20AC142.1B)';
 
   allDeals = await loadAllDeals();
   buildYearOverview();
@@ -740,7 +740,7 @@ async function init(){
   selectLast(2);
 }
 
-// ── YEAR OVERVIEW ─────────────────────────────────────────────────────────────
+// -- YEAR OVERVIEW -------------------------------------------------------------
 function buildYearOverview(){
   const years=[2020,2021,2022,2023,2024,2025,2026];
   const container = document.getElementById('yearOverview');
@@ -760,7 +760,7 @@ function buildYearOverview(){
   document.getElementById('yearMeta').textContent = `${allDeals.length} TOTAL DEALS`;
 }
 
-// ── QUARTER GRID ──────────────────────────────────────────────────────────────
+// -- QUARTER GRID --------------------------------------------------------------
 function buildQuarterGrid(){
   const grid = document.getElementById('quarterGrid');
   grid.innerHTML='';
@@ -833,7 +833,7 @@ function selectLast(nQ){
   applyFilters();
 }
 
-// ── FILTER ENGINE ─────────────────────────────────────────────────────────────
+// -- FILTER ENGINE -------------------------------------------------------------
 function applyFilters(){
   let data = [...allDeals];
 
@@ -868,11 +868,11 @@ function applyFilters(){
   renderSectorBars();
   renderInvestors();
 
-  const label = selectedPeriods.size ? [...selectedPeriods].sort().map(k=>{const[y,q]=k.split('-');return`Q${q} ${y}`}).join(' · ') : 'All Time';
+  const label = selectedPeriods.size ? [...selectedPeriods].sort().map(k=>{const[y,q]=k.split('-');return`Q${q} ${y}`}).join(' \u00B7 ') : 'All Time';
   document.getElementById('chartMeta').textContent = label;
 }
 
-// ── STATS ──────────────────────────────────────────────────────────────────────
+// -- STATS ----------------------------------------------------------------------
 function updateStats(){
   const total    = filteredDeals.reduce((s,d)=>s+(d.amount_eur||0),0);
   const amounts  = filteredDeals.map(d=>d.amount_eur||0).filter(v=>v>0).sort((a,b)=>a-b);
@@ -886,7 +886,7 @@ function updateStats(){
   document.getElementById('dealCountLabel').textContent = `${filteredDeals.length} DEALS`;
 }
 
-// ── TABLE ──────────────────────────────────────────────────────────────────────
+// -- TABLE ----------------------------------------------------------------------
 function renderTable(){
   const tbody=document.getElementById('dealTableBody');
   if(!filteredDeals.length){
@@ -896,19 +896,19 @@ function renderTable(){
   tbody.innerHTML=filteredDeals.map(d=>`
     <tr>
       <td><div class="company-cell">
-        <div class="company-avatar">${d.flag||'🏢'}</div>
+        <div class="company-avatar">${d.flag||'\uD83C\uDFE2'}</div>
         <div><div class="company-name">${d.company}</div><div class="company-country">${d.country}</div></div>
       </div></td>
       <td>${stageBadge(d.stage)}</td>
       <td><span class="amount-text">${d.amount_display||fmt(d.amount_eur)}</span></td>
-      <td><span class="sector-pill">${d.sector||'—'}</span></td>
-      <td><span class="investor-text">${d.lead_investor||'—'}</span></td>
+      <td><span class="sector-pill">${d.sector||'\u2014'}</span></td>
+      <td><span class="investor-text">${d.lead_investor||'\u2014'}</span></td>
       <td style="font-size:12px;font-weight:600;color:var(--mid)">Q${d.quarter} ${d.year}</td>
       <td class="desc-cell">${d.description||''}</td>
     </tr>`).join('');
 }
 
-// ── SECTOR FILTERS ──────────────────────────────────────────────────────────────
+// -- SECTOR FILTERS --------------------------------------------------------------
 function buildSectorFilters(){
   const sectors=[...new Set(allDeals.map(d=>d.sector).filter(Boolean))].sort();
   const cont=document.getElementById('sectorFilters');
@@ -932,7 +932,7 @@ function buildSectorFilters(){
   });
 }
 
-// ── CHARTS ─────────────────────────────────────────────────────────────────────
+// -- CHARTS ---------------------------------------------------------------------
 function renderCharts(){
   renderSectorChart();
   renderStageChart();
@@ -955,9 +955,9 @@ function renderAvgStageChart(){
   const colors=stats.map(d=>STAGE_COLORS[d.stage]||STAGE_COLORS['other']);
   charts['avgStage']=new Chart(document.getElementById('avgStageChart'),{
     type:'bar',
-    data:{labels:stats.map(d=>d.stage),datasets:[{label:'Avg Round Size (€M)',data:stats.map(d=>d.avg),backgroundColor:colors,borderRadius:8,barPercentage:.55}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`Avg: €${c.raw}M`,afterLabel:c=>`${stats[c.dataIndex].count} deals`}}},
-      scales:{x:{grid:{display:false},ticks:{font:{size:12,weight:'600'}}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'€'+v+'M'},beginAtZero:true}}}
+    data:{labels:stats.map(d=>d.stage),datasets:[{label:'Avg Round Size (\u20ACM)',data:stats.map(d=>d.avg),backgroundColor:colors,borderRadius:8,barPercentage:.55}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`Avg: \u20AC${c.raw}M`,afterLabel:c=>`${stats[c.dataIndex].count} deals`}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:12,weight:'600'}}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'\u20AC'+v+'M'},beginAtZero:true}}}
   });
 }
 
@@ -971,7 +971,7 @@ function renderSectorChart(){
     data:{labels:sorted.map(e=>e[0]),datasets:[{data:sorted.map(e=>Math.round(e[1])),backgroundColor:SECTOR_COLORS,borderWidth:0,hoverOffset:6}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{
       legend:{position:'right',labels:{font:{size:11},padding:10}},
-      tooltip:{callbacks:{label:c=>` ${c.label}: €${c.raw}M`}}
+      tooltip:{callbacks:{label:c=>` ${c.label}: \u20AC${c.raw}M`}}
     }}
   });
 }
@@ -983,8 +983,8 @@ function renderStageChart(){
   charts['stage']=new Chart(document.getElementById('stageChart'),{
     type:'bar',
     data:{labels:stages,datasets:[{data:totals,backgroundColor:stages.map(s=>STAGE_COLORS[s]||STAGE_COLORS['other']),borderRadius:6,barPercentage:.6}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`€${c.raw}M`}}},
-      scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'€'+v+'M'}}}}
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`\u20AC${c.raw}M`}}},
+      scales:{x:{grid:{display:false}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'\u20AC'+v+'M'}}}}
   });
 }
 
@@ -1007,14 +1007,14 @@ function renderTimelineChart(){
   charts['timeline']=new Chart(document.getElementById('timelineChart'),{
     type:'bar',
     data:{labels,datasets:[
-      {type:'bar',label:'Capital (€M)',data:capitals,backgroundColor:bgColors,borderRadius:4,yAxisID:'y'},
+      {type:'bar',label:'Capital (\u20ACM)',data:capitals,backgroundColor:bgColors,borderRadius:4,yAxisID:'y'},
       {type:'line',label:'Deals',data:deals,borderColor:'#2d7dd2',backgroundColor:'rgba(45,125,210,.1)',borderWidth:2,pointRadius:3,fill:true,yAxisID:'y2',tension:.4}
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{labels:{font:{size:11}}}},
       scales:{
         x:{grid:{display:false}},
-        y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'€'+v+'M'},position:'left'},
+        y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{callback:v=>'\u20AC'+v+'M'},position:'left'},
         y2:{position:'right',grid:{display:false},ticks:{stepSize:2}}
       }}
   });
@@ -1035,15 +1035,15 @@ function renderCountryChart(){
 
 function renderSizeChart(){
   destroyChart('size');
-  const buckets={'<€5M':0,'€5–15M':0,'€15–50M':0,'€50–200M':0,'€200M–1B':0,'€1B+':0};
+  const buckets={'<\u20AC5M':0,'\u20AC5\u201315M':0,'\u20AC15\u201350M':0,'\u20AC50\u2013200M':0,'\u20AC200M\u20131B':0,'\u20AC1B+':0};
   filteredDeals.forEach(d=>{
     const v=d.amount_eur||0;
-    if(v<5)      buckets['<€5M']++;
-    else if(v<15) buckets['€5–15M']++;
-    else if(v<50) buckets['€15–50M']++;
-    else if(v<200)buckets['€50–200M']++;
-    else if(v<1000)buckets['€200M–1B']++;
-    else          buckets['€1B+']++;
+    if(v<5)      buckets['<\u20AC5M']++;
+    else if(v<15) buckets['\u20AC5\u201315M']++;
+    else if(v<50) buckets['\u20AC15\u201350M']++;
+    else if(v<200)buckets['\u20AC50\u2013200M']++;
+    else if(v<1000)buckets['\u20AC200M\u20131B']++;
+    else          buckets['\u20AC1B+']++;
   });
   charts['size']=new Chart(document.getElementById('sizeChart'),{
     type:'bar',
@@ -1053,7 +1053,7 @@ function renderSizeChart(){
   });
 }
 
-// ── SECTOR BARS ────────────────────────────────────────────────────────────────
+// -- SECTOR BARS ----------------------------------------------------------------
 function renderSectorBars(){
   const map={};
   filteredDeals.forEach(d=>{const k=d.sector||'Other';map[k]=(map[k]||0)+(d.amount_eur||0)});
@@ -1068,7 +1068,7 @@ function renderSectorBars(){
     </div>`).join('');
 }
 
-// ── INVESTORS ──────────────────────────────────────────────────────────────────
+// -- INVESTORS ------------------------------------------------------------------
 function renderInvestors(){
   const map={};
   filteredDeals.forEach(d=>{
@@ -1094,12 +1094,12 @@ function renderInvestors(){
         <div class="inv-stat"><label>Deals</label><span>${d.deals}</span></div>
         <div class="inv-stat"><label>Capital</label><span>${fmtB(d.capital)}</span></div>
       </div>
-      <div class="inv-companies">${d.companies.join(' · ')}</div>
+      <div class="inv-companies">${d.companies.join(' \u00B7 ')}</div>
     </div>`).join('');
   document.getElementById('invMeta').textContent=`${sorted.length} INVESTORS`;
 }
 
-// ── EVENTS ─────────────────────────────────────────────────────────────────────
+// -- EVENTS ---------------------------------------------------------------------
 function bindEvents(){
   // Stage filter
   document.getElementById('stageFilters').querySelectorAll('.filter-btn').forEach(b=>{
@@ -1134,7 +1134,7 @@ function bindEvents(){
   });
 }
 
-// ── START ──────────────────────────────────────────────────────────────────────
+// -- START ----------------------------------------------------------------------
 init().catch(console.error);
 </script>
 </body>
