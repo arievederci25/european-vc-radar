@@ -473,6 +473,25 @@ footer{
 }
 .empty-state h3{font-size:20px;font-weight:700;color:var(--mid);margin-bottom:8px}
 
+/* --- Delta bar --- */
+.delta-bar{
+  display:none;align-items:center;gap:10px;
+  background:var(--cream-2);border-radius:var(--radius);
+  padding:10px 14px;margin-bottom:12px;font-size:12px;
+}
+.delta-bar.visible{display:flex}
+.delta-from,.delta-to{font-weight:700;color:var(--dark);font-family:var(--font-mono)}
+.delta-arrow{color:var(--light);font-size:16px}
+.delta-pct{
+  margin-left:auto;padding:3px 10px;
+  border-radius:var(--radius-pill);
+  font-size:12px;font-weight:700;font-family:var(--font-mono);
+}
+.delta-pct.up{background:#e8f5f0;color:#1a7a5e}
+.delta-pct.down{background:#fdecea;color:#c0392b}
+.delta-pct.flat{background:var(--cream-3);color:var(--mid)}
+.delta-label{font-size:11px;color:var(--light)}
+
 /* --- Chart period pills --- */
 .cp-pill{
   padding:4px 10px;border-radius:var(--radius-pill);
@@ -605,12 +624,20 @@ footer{
       </div>
       <div class="chart-card">
         <div class="chart-label">Avg Round Size by Stage per Quarter (&euro;M)</div>
-        <div id="avgStagePills" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:14px"></div>
+        <div id="avgStageDelta" class="delta-bar"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-bottom:14px">
+          <div id="avgStagePills" style="display:flex;flex-wrap:wrap;gap:4px;flex:1"></div>
+          <button class="cp-pill" onclick="clearAvgStage()" style="margin-left:4px;border-color:var(--border)">Clear</button>
+        </div>
         <div class="chart-wrap"><canvas id="avgStageChart"></canvas></div>
       </div>
       <div class="chart-card">
         <div class="chart-label">Deal Velocity (deals per quarter)</div>
-        <div id="velocityPills" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:14px"></div>
+        <div id="velocityDelta" class="delta-bar"></div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-bottom:14px">
+          <div id="velocityPills" style="display:flex;flex-wrap:wrap;gap:4px;flex:1"></div>
+          <button class="cp-pill" onclick="clearVelocity()" style="margin-left:4px;border-color:var(--border)">Clear</button>
+        </div>
         <div class="chart-wrap"><canvas id="velocityChart"></canvas></div>
       </div>
     </div>
@@ -992,10 +1019,26 @@ function buildAvgStagePills(){
   });
 }
 
+function clearAvgStage(){
+  avgStageSelected.clear();
+  buildAvgStagePills();
+  renderAvgStageChart();
+}
+
+function renderDelta(elId, first, last, fmtFn, labelFirst, labelLast){
+  const el=document.getElementById(elId);
+  if(first==null||last==null||first===last){el.classList.remove('visible');return}
+  const pct=Math.round(((last-first)/Math.abs(first))*100);
+  const dir=pct>0?'up':pct<0?'down':'flat';
+  const arrow=pct>0?'&rarr;':pct<0?'&rarr;':'&rarr;';
+  el.innerHTML=`<span class="delta-label">${labelFirst}</span><span class="delta-from">${fmtFn(first)}</span><span class="delta-arrow">&rarr;</span><span class="delta-label">${labelLast}</span><span class="delta-to">${fmtFn(last)}</span><span class="delta-pct ${dir}">${pct>0?'+':''}${pct}%</span>`;
+  el.classList.add('visible');
+}
+
 function renderAvgStageChart(){
   destroyChart('avgStage');
   const quarters=[...avgStageSelected].sort();
-  if(!quarters.length) return;
+  if(!quarters.length){document.getElementById('avgStageDelta').classList.remove('visible');return}
   const stages=['Seed','Series A','Series B'];
   const datasets=stages.map(s=>({
     label:s,
@@ -1008,6 +1051,12 @@ function renderAvgStageChart(){
     borderRadius:5,
     barPercentage:.7
   }));
+  // Delta: total avg across all stages, first vs last quarter
+  const avgForQ=k=>{const[y,q]=k.split('-');const d=allDeals.filter(x=>x.year==y&&x.quarter==q&&['Seed','Series A','Series B'].includes(x.stage)&&x.amount_eur>0);return d.length?d.reduce((a,x)=>a+(x.amount_eur||0),0)/d.length:null};
+  const ql=quarters[quarters.length-1];
+  const qf=quarters[0];
+  const lbl=k=>{const[y,q]=k.split('-');return`Q${q}'${String(y).slice(2)}`};
+  renderDelta('avgStageDelta',avgForQ(qf),avgForQ(ql),v=>`\u20AC${v.toFixed(1)}M`,lbl(qf),lbl(ql));
   charts['avgStage']=new Chart(document.getElementById('avgStageChart'),{
     type:'bar',
     data:{labels:quarters.map(k=>{const[y,q]=k.split('-');return`Q${q}'${String(y).slice(2)}`}),datasets},
@@ -1059,16 +1108,24 @@ function buildVelocityPills(){
   });
 }
 
+function clearVelocity(){
+  velocitySelected.clear();
+  buildVelocityPills();
+  renderVelocityChart();
+}
+
 function renderVelocityChart(){
   destroyChart('velocity');
   const quarters=[...velocitySelected].sort();
-  if(!quarters.length) return;
+  if(!quarters.length){document.getElementById('velocityDelta').classList.remove('visible');return}
   const labels=quarters.map(k=>{const[y,q]=k.split('-');return`Q${q}'${String(y).slice(2)}`});
   const data=quarters.map(k=>{const[y,q]=k.split('-');return allDeals.filter(d=>d.year==y&&d.quarter==q).length});
-  const colors=data.map(()=>'rgba(232,116,97,0.75)');
+  // Delta: first vs last selected quarter
+  const lbl=k=>{const[y,q]=k.split('-');return`Q${q}'${String(y).slice(2)}`};
+  renderDelta('velocityDelta',data[0],data[data.length-1],v=>`${v} deals`,lbl(quarters[0]),lbl(quarters[quarters.length-1]));
   charts['velocity']=new Chart(document.getElementById('velocityChart'),{
     type:'bar',
-    data:{labels,datasets:[{label:'Deals',data,backgroundColor:colors,borderRadius:5,barPercentage:.65}]},
+    data:{labels,datasets:[{label:'Deals',data,backgroundColor:data.map(()=>'rgba(232,116,97,0.75)'),borderRadius:5,barPercentage:.65}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw} deals`}}},
       scales:{x:{grid:{display:false},ticks:{maxTicksLimit:16,font:{size:10}}},y:{grid:{color:'rgba(0,0,0,0.04)'},beginAtZero:true,ticks:{stepSize:10}}}}
