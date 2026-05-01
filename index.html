@@ -1000,8 +1000,8 @@ function buildAvgStagePills(){
     if(y===nowY&&q>nowQ) break;
     if(allDeals.some(d=>d.year===y&&d.quarter===q)) all.push(`${y}-${q}`);
   }
-  // Default: last 4 quarters
-  if(avgStageSelected.size===0) all.slice(-4).forEach(k=>avgStageSelected.add(k));
+  // Default: last 4 quarters (only on first load)
+  if(avgStageSelected.size===0&&!avgStageSelected._cleared) all.slice(-4).forEach(k=>avgStageSelected.add(k));
 
   const cont=document.getElementById('avgStagePills');
   cont.innerHTML='';
@@ -1021,6 +1021,7 @@ function buildAvgStagePills(){
 
 function clearAvgStage(){
   avgStageSelected.clear();
+  avgStageSelected._cleared=true;
   buildAvgStagePills();
   renderAvgStageChart();
 }
@@ -1075,7 +1076,7 @@ function buildVelocityPills(){
     if(y===nowY&&q>nowQ) break;
     if(allDeals.some(d=>d.year===y&&d.quarter===q)) all.push(`${y}-${q}`);
   }
-  if(velocitySelected.size===0) all.forEach(k=>velocitySelected.add(k)); // default: all
+  if(velocitySelected.size===0&&!velocitySelected._cleared) all.forEach(k=>velocitySelected.add(k)); // default: all
   const cont=document.getElementById('velocityPills');
   cont.innerHTML='';
   // Year-grouped pills
@@ -1110,6 +1111,7 @@ function buildVelocityPills(){
 
 function clearVelocity(){
   velocitySelected.clear();
+  velocitySelected._cleared=true;
   buildVelocityPills();
   renderVelocityChart();
 }
