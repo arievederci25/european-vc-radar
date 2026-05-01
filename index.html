@@ -491,6 +491,7 @@ footer{
 .delta-pct.down{background:#fdecea;color:#c0392b}
 .delta-pct.flat{background:var(--cream-3);color:var(--mid)}
 .delta-label{font-size:11px;color:var(--light)}
+.delta-note{font-size:10px;color:var(--light);font-style:italic;margin-left:4px}
 
 /* --- Chart period pills --- */
 .cp-pill{
@@ -1026,13 +1027,12 @@ function clearAvgStage(){
   renderAvgStageChart();
 }
 
-function renderDelta(elId, first, last, fmtFn, labelFirst, labelLast){
+function renderDelta(elId, first, last, fmtFn, labelFirst, labelLast, note=''){
   const el=document.getElementById(elId);
   if(first==null||last==null||first===last){el.classList.remove('visible');return}
   const pct=Math.round(((last-first)/Math.abs(first))*100);
   const dir=pct>0?'up':pct<0?'down':'flat';
-  const arrow=pct>0?'&rarr;':pct<0?'&rarr;':'&rarr;';
-  el.innerHTML=`<span class="delta-label">${labelFirst}</span><span class="delta-from">${fmtFn(first)}</span><span class="delta-arrow">&rarr;</span><span class="delta-label">${labelLast}</span><span class="delta-to">${fmtFn(last)}</span><span class="delta-pct ${dir}">${pct>0?'+':''}${pct}%</span>`;
+  el.innerHTML=`<span class="delta-label">${labelFirst}</span><span class="delta-from">${fmtFn(first)}</span><span class="delta-arrow">&rarr;</span><span class="delta-label">${labelLast}</span><span class="delta-to">${fmtFn(last)}</span><span class="delta-pct ${dir}">${pct>0?'+':''}${pct}%</span>${note?`<span class="delta-note">${note}</span>`:''}`;
   el.classList.add('visible');
 }
 
@@ -1070,7 +1070,7 @@ function renderAvgStageChart(){
   const ql=quarters[quarters.length-1];
   const qf=quarters[0];
   const lbl=k=>{const[y,q]=k.split('-');return`Q${q}'${String(y).slice(2)}`};
-  renderDelta('avgStageDelta',avgForQ(qf),avgForQ(ql),v=>`\u20AC${v.toFixed(1)}M`,lbl(qf),lbl(ql));
+  renderDelta('avgStageDelta',avgForQ(qf),avgForQ(ql),v=>`\u20AC${v.toFixed(1)}M`,lbl(qf),lbl(ql),'weighted avg');
   charts['avgStage']=new Chart(document.getElementById('avgStageChart'),{
     type:'bar',
     data:{labels:quarters.map(k=>{const[y,q]=k.split('-');return`Q${q}'${String(y).slice(2)}`}),datasets},
