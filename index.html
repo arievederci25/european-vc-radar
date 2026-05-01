@@ -1135,12 +1135,14 @@ function renderVelocityChart(){
   if(!quarters.length){document.getElementById('velocityDelta').classList.remove('visible');return}
   const labels=quarters.map(k=>{const[y,q]=k.split('-');return`Q${q}'${String(y).slice(2)}`});
   const data=quarters.map(k=>{const[y,q]=k.split('-');return allDeals.filter(d=>d.year==y&&d.quarter==q).length});
+  const YEAR_COLORS={'2020':'rgba(45,125,210,0.8)','2021':'rgba(46,196,182,0.8)','2022':'rgba(232,116,97,0.8)','2023':'rgba(255,179,71,0.8)','2024':'rgba(139,58,47,0.8)','2025':'rgba(106,153,85,0.8)','2026':'rgba(155,89,182,0.8)'};
+  const bgColors=quarters.map(k=>YEAR_COLORS[k.split('-')[0]]||'rgba(160,152,136,0.8)');
   // Delta: first vs last selected quarter
   const lbl=k=>{const[y,q]=k.split('-');return`Q${q}'${String(y).slice(2)}`};
   renderDelta('velocityDelta',data[0],data[data.length-1],v=>`${v} deals`,lbl(quarters[0]),lbl(quarters[quarters.length-1]));
   charts['velocity']=new Chart(document.getElementById('velocityChart'),{
     type:'bar',
-    data:{labels,datasets:[{label:'Deals',data,backgroundColor:data.map(()=>'rgba(232,116,97,0.75)'),borderRadius:5,barPercentage:.65}]},
+    data:{labels,datasets:[{label:'Deals',data,backgroundColor:bgColors,borderRadius:5,barPercentage:.65}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.raw} deals`}}},
       scales:{x:{grid:{display:false},ticks:{maxTicksLimit:16,font:{size:10}}},y:{grid:{color:'rgba(0,0,0,0.04)'},beginAtZero:true,ticks:{stepSize:10}}}}
