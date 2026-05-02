@@ -284,6 +284,19 @@ footer{margin-top:80px;border-top:1px solid var(--border);padding:48px 24px}
 </footer>
 
 <script>
+// -- ANALYTICS (cookieless, no personal data) --------------------------------
+(function(){
+  fetch('https://swhjffkhhwktrvwiqmoe.supabase.co/rest/v1/page_views',{
+    method:'POST',
+    headers:{
+      'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3aGpmZmtoaHdrdHJ2d2lxbW9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTY5NDYsImV4cCI6MjA5MDc5Mjk0Nn0.XjNLCy3Fahc9AlitTpLWMQFRFC8HXh3OVT5iaIeFrNE',
+      'Content-Type':'application/json',
+      'Prefer':'return=minimal'
+    },
+    body:JSON.stringify({page:location.pathname,referrer:document.referrer||null})
+  });
+})();
+
 async function sendForm(e) {
   e.preventDefault();
   const btn = document.getElementById('submitBtn');
