@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://radar.goldfish.global/sitemap.xml
+Sitemap: https://www.vcradar.nl/sitemap.xml
