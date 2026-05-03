@@ -250,9 +250,20 @@ function renderSpark(data) {
   }).join('');
 }
 
+function cleanPage(p) {
+  if (!p) return '/';
+  // Reject data: URLs, excessively long strings, or URL-encoded HTML blobs
+  if (p.length > 120 || p.startsWith('data:') || p.includes('%3C') || p.includes('%0A')) return null;
+  return p;
+}
+
 function renderPages(data) {
   const counts = {};
-  data.forEach(r => { const p = r.page || '/'; counts[p] = (counts[p]||0)+1; });
+  data.forEach(r => {
+    const p = cleanPage(r.page);
+    if (!p) return;
+    counts[p] = (counts[p]||0)+1;
+  });
   const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
   const max = sorted[0]?.[1] || 1;
   const el = document.getElementById('pageTable');
@@ -292,7 +303,7 @@ function renderRecent(data) {
       const d = new Date(r.created_at);
       const t = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) + ' ' +
                 d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-      return `<tr><td style="font-family:var(--mono);font-size:12px">${t}</td><td>${r.page||'/'}</td></tr>`;
+      return `<tr><td style="font-family:var(--mono);font-size:12px">${t}</td><td>${cleanPage(r.page)||'/'}</td></tr>`;
     }).join('');
 }
 
