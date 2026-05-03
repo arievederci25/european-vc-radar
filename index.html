@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' fonts.googleapis.com 'unsafe-inline'; font-src fonts.gstatic.com; connect-src https://swhjffkhhwktrvwiqmoe.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Permissions-Policy" content="geolocation=(), camera=(), microphone=()">
 <title>European VC Radar &mdash; Where European VC Money Moves</title>
 <meta name="description" content="Track every significant venture capital funding round across Europe &mdash; seed to growth. 609+ deals, &euro;142B+ capital, 30+ countries.">
 <meta name="robots" content="index, follow">
@@ -30,7 +34,7 @@
   "@type": "WebSite",
   "name": "European VC Radar",
   "url": "https://www.vcradar.nl/",
-  "description": "Track every significant venture capital funding round across Europe &mdash; from seed to growth.",
+  "description": "Track every significant venture capital funding round across Europe — from seed to growth.",
   "publisher": {
     "@type": "Organization",
     "name": "Goldfish",
@@ -49,8 +53,8 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha256-KBLLiCX9xXRp6y97sFXpQpJE5ZmSBRHuR36ChJm2Mss=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js" integrity="sha256-/anWf4DM5AdPeNY3O7E26Ew0yyNbipHF5ChAaNpt3EI=" crossorigin="anonymous"></script>
 <style>
 /* --- DESIGN TOKENS (Goldfish-inspired) --- */
 :root {
@@ -834,7 +838,7 @@ footer{
       'Content-Type':'application/json',
       'Prefer':'return=minimal'
     },
-    body:JSON.stringify({page:location.pathname,referrer:document.referrer||null})
+    body:JSON.stringify({page:location.pathname,referrer:document.referrer?(()=>{try{const u=new URL(document.referrer);return u.origin+u.pathname}catch(e){return null}})():null})
   });
 })();
 
@@ -864,6 +868,7 @@ let charts = {};
 // -- HELPERS ------------------------------------------------------------------
 const fmt  = (n,d=0)=> n==null?'\u2014':'\u20AC'+Number(n).toLocaleString('en',{maximumFractionDigits:d})+'M';
 const fmtB = n=> n==null?'\u2014': n>=1000 ? '\u20AC'+(n/1000).toFixed(1)+'B' : '\u20AC'+Math.round(n)+'M';
+function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 
 function stageBadge(s){
   let cls='badge-other';
@@ -871,7 +876,7 @@ function stageBadge(s){
   else if(s==='Series A') cls='badge-a';
   else if(s==='Series B') cls='badge-b';
   else if(s==='Series C') cls='badge-c';
-  return `<span class="stage-badge ${cls}">${s}</span>`;
+  return `<span class="stage-badge ${cls}">${esc(s)}</span>`;
 }
 
 function qLabel(y,q){return`${y} Q${q}`}
@@ -1093,15 +1098,15 @@ function renderTable(){
   tbody.innerHTML=filteredDeals.map(d=>`
     <tr>
       <td><div class="company-cell">
-        <div class="company-avatar">${d.flag||'\uD83C\uDFE2'}</div>
-        <div><div class="company-name">${d.company}</div><div class="company-country">${d.country}</div></div>
+        <div class="company-avatar">${esc(d.flag)||'\uD83C\uDFE2'}</div>
+        <div><div class="company-name">${esc(d.company)}</div><div class="company-country">${esc(d.country)}</div></div>
       </div></td>
       <td>${stageBadge(d.stage)}</td>
-      <td><span class="amount-text">${d.amount_display||fmt(d.amount_eur)}</span></td>
-      <td><span class="sector-pill">${d.sector||'\u2014'}</span></td>
-      <td><span class="investor-text">${d.lead_investor||'\u2014'}</span></td>
-      <td style="font-size:12px;font-weight:600;color:var(--mid)">Q${d.quarter} ${d.year}</td>
-      <td class="desc-cell">${d.description||''}</td>
+      <td><span class="amount-text">${esc(d.amount_display)||fmt(d.amount_eur)}</span></td>
+      <td><span class="sector-pill">${esc(d.sector)||'\u2014'}</span></td>
+      <td><span class="investor-text">${esc(d.lead_investor)||'\u2014'}</span></td>
+      <td style="font-size:12px;font-weight:600;color:var(--mid)">Q${Number(d.quarter)} ${Number(d.year)}</td>
+      <td class="desc-cell">${esc(d.description)}</td>
     </tr>`).join('');
 }
 
@@ -1110,7 +1115,7 @@ function buildSectorFilters(){
   const sectors=[...new Set(allDeals.map(d=>d.sector).filter(Boolean))].sort();
   const cont=document.getElementById('sectorFilters');
   cont.innerHTML='<button class="filter-btn active" data-sector="all">All Sectors</button>'+
-    sectors.map(s=>`<button class="filter-btn" data-sector="${s}">${s}</button>`).join('');
+    sectors.map(s=>`<button class="filter-btn" data-sector="${esc(s)}">${esc(s)}</button>`).join('');
   cont.querySelectorAll('.filter-btn').forEach(b=>{
     b.onclick=()=>{
       const v=b.dataset.sector;
@@ -1403,7 +1408,7 @@ function renderSectorBars(){
   const cont=document.getElementById('sectorBars');
   cont.innerHTML=sorted.map(([s,v],i)=>`
     <div class="sbar-row">
-      <span class="sbar-label">${s}</span>
+      <span class="sbar-label">${esc(s)}</span>
       <div class="sbar-track"><div class="sbar-fill" style="width:${(v/max*100).toFixed(1)}%;background:${SECTOR_COLORS[i%SECTOR_COLORS.length]}"></div></div>
       <span class="sbar-val">${fmtB(v)}</span>
     </div>`).join('');
@@ -1430,12 +1435,12 @@ function renderInvestors(){
   cont.innerHTML=sorted.map(([name,d],i)=>`
     <div class="investor-card">
       <div class="inv-rank">#${i+1} Lead Investor</div>
-      <div class="inv-name">${name}</div>
+      <div class="inv-name">${esc(name)}</div>
       <div class="inv-stats">
         <div class="inv-stat"><label>Deals</label><span>${d.deals}</span></div>
         <div class="inv-stat"><label>Capital</label><span>${fmtB(d.capital)}</span></div>
       </div>
-      <div class="inv-companies">${d.companies.join(' \u00B7 ')}</div>
+      <div class="inv-companies">${d.companies.map(esc).join(' \u00B7 ')}</div>
     </div>`).join('');
   document.getElementById('invMeta').textContent=`${sorted.length} INVESTORS`;
 }
