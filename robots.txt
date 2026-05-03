@@ -1,4 +1,24 @@
 User-agent: *
 Allow: /
+Disallow: /admin.html
+Disallow: /linkedin-hero.html
+Disallow: /logo.html
+Disallow: /infographic-q2-2026.html
+
+# AI crawlers — allow indexing, disallow training data scraping
+User-agent: GPTBot
+Disallow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
 
 Sitemap: https://www.vcradar.nl/sitemap.xml

@@ -17,7 +17,9 @@
 <meta property="og:url" content="https://www.vcradar.nl/">
 <meta property="og:title" content="European VC Radar &mdash; Where European VC Money Moves">
 <meta property="og:description" content="Track every significant venture capital funding round across Europe. 609+ deals, &euro;142B+ capital tracked across 30+ countries.">
-<meta property="og:image" content="https://www.vcradar.nl/linkedin-hero.html">
+<meta property="og:image" content="https://www.vcradar.nl/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:site_name" content="European VC Radar">
 <meta property="og:locale" content="en_GB">
 
@@ -25,7 +27,11 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="European VC Radar &mdash; Where European VC Money Moves">
 <meta name="twitter:description" content="Track every significant venture capital funding round across Europe. 609+ deals, &euro;142B+ capital tracked across 30+ countries.">
-<meta name="twitter:image" content="https://www.vcradar.nl/linkedin-hero.html">
+<meta name="twitter:image" content="https://www.vcradar.nl/og-image.png">
+
+<!-- Author / hreflang -->
+<meta name="author" content="Goldfish">
+<link rel="alternate" hreflang="en-GB" href="https://www.vcradar.nl/">
 
 <!-- JSON-LD Structured Data -->
 <script type="application/ld+json">
@@ -46,15 +52,51 @@
     "description": "Comprehensive dataset of European venture capital funding rounds including deal size, stage, country, sector, and lead investor.",
     "keywords": ["venture capital", "VC", "Europe", "startup funding", "investment rounds", "seed", "Series A", "Series B"],
     "spatialCoverage": "Europe",
-    "temporalCoverage": "2020/.."
+    "temporalCoverage": "2020-01-01/"
   }
 }
 </script>
 
+<!-- Organization + DataCatalog structured data -->
+<script type="application/ld+json">
+[
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Goldfish",
+    "url": "https://goldfish.global",
+    "description": "European M&A and VC advisory firm specialising in growth-stage fundraising and sell-side transactions.",
+    "sameAs": ["https://www.linkedin.com/in/abrienen"]
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "DataCatalog",
+    "name": "European VC Radar — Deal Database",
+    "url": "https://www.vcradar.nl/",
+    "description": "Curated catalogue of European venture capital funding rounds from 2020 onwards, covering seed through growth stage across 30+ countries.",
+    "publisher": {
+      "@type": "Organization",
+      "name": "Goldfish",
+      "url": "https://goldfish.global"
+    },
+    "dataset": {
+      "@type": "Dataset",
+      "name": "European VC Funding Rounds 2020–2026",
+      "description": "609+ venture capital funding rounds across Europe: company, country, funding stage, round size in EUR, lead investor, sector, and quarter.",
+      "keywords": ["venture capital", "VC", "Europe", "startup funding", "seed", "Series A", "Series B", "Series C", "growth equity", "Netherlands", "Germany", "France", "UK", "Sweden"],
+      "spatialCoverage": "Europe",
+      "temporalCoverage": "2020-01-01/",
+      "measurementTechnique": "Aggregated from press releases, regulatory filings, and verified news sources across 33 European outlets",
+      "isAccessibleForFree": true,
+      "license": "https://creativecommons.org/licenses/by/4.0/"
+    }
+  }
+]
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha256-KBLLiCX9xXRp6y97sFXpQpJE5ZmSBRHuR36ChJm2Mss=" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js" integrity="sha256-/anWf4DM5AdPeNY3O7E26Ew0yyNbipHF5ChAaNpt3EI=" crossorigin="anonymous"></script>
 <style>
 /* --- DESIGN TOKENS (Goldfish-inspired) --- */
 :root {
@@ -80,7 +122,7 @@
   --font-mono:'JetBrains Mono', monospace;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;scroll-padding-top:80px}
 body{
   font-family:var(--font-body);
   background:var(--cream);
@@ -607,17 +649,17 @@ footer{
 
 <!-- NAV -->
 <nav class="navbar">
-  <a class="nav-brand" href="#">
+  <a class="nav-brand" href="/">
     <div class="nav-logo">
       <svg viewBox="0 0 51 49"><path d="m30.388 34.796-9.8-9.8-9.8 9.8L1 25v19.592l9.8-9.8 9.8 9.8Z"/><path d="m49.981 15.204-9.8-9.8-9.8 9.8-9.8-9.8V25l9.8-9.8 9.8 9.8Z"/></svg>
     </div>
     VC Radar
   </a>
   <div class="nav-links">
-    <button class="nav-link active" onclick="scrollTo(0,0)">Overview</button>
-    <button class="nav-link" onclick="document.getElementById('deals').scrollIntoView({behavior:'smooth'})">Deals</button>
-    <button class="nav-link" onclick="document.getElementById('investors').scrollIntoView({behavior:'smooth'})">Investors</button>
-    <button class="nav-link" onclick="document.getElementById('charts').scrollIntoView({behavior:'smooth'})">Analytics</button>
+    <a class="nav-link active" href="/">Overview</a>
+    <a class="nav-link" href="#deals">Deals</a>
+    <a class="nav-link" href="#investors">Investors</a>
+    <a class="nav-link" href="#charts">Analytics</a>
     <a class="nav-link" href="contact.html">Contact</a>
   </div>
   <span id="lastUpdated" style="font-size:11px;color:var(--light);font-weight:500">Loading&hellip;</span>
@@ -632,8 +674,8 @@ footer{
   <h1>Where European<br><em>VC money moves</em></h1>
   <p class="hero-sub">Track every significant funding round across Europe &mdash; from seed to growth &mdash; updated quarterly.</p>
   <div class="hero-actions">
-    <button class="btn-primary" onclick="document.getElementById('quarter-selector').scrollIntoView({behavior:'smooth'})">Explore by Quarter</button>
-    <button class="btn-ghost" onclick="document.getElementById('deals').scrollIntoView({behavior:'smooth'})">View All Deals &rarr;</button>
+    <a class="btn-primary" href="#quarter-selector">Explore by Quarter</a>
+    <a class="btn-ghost" href="#deals">View All Deals &rarr;</a>
   </div>
 </header>
 
@@ -641,11 +683,11 @@ footer{
 
   <!-- YEAR OVERVIEW CARDS -->
   <section>
-    <div class="section-label">
+    <h2 class="section-label">
       Year Overview
       <span class="section-meta" id="yearMeta"></span>
-    </div>
-    <div id="yearOverview" class="year-overview-grid">
+    </h2>
+    <div id="yearOverview" class="year-overview-grid" style="min-height:140px">
       <div class="loading-overlay" style="grid-column:1/-1"><div class="spinner"></div></div>
     </div>
   </section>
@@ -725,7 +767,7 @@ footer{
 
   <!-- CHARTS -->
   <section id="charts">
-    <div class="section-label">Capital Flow Analytics <span class="section-meta" id="chartMeta"></span></div>
+    <h2 class="section-label">Capital Flow Analytics <span class="section-meta" id="chartMeta"></span></h2>
     <div class="chart-grid">
       <div class="chart-card">
         <div class="chart-label">Funding by Sector</div>
@@ -770,7 +812,7 @@ footer{
 
   <!-- SECTOR BREAKDOWN -->
   <section>
-    <div class="section-label">Sector Breakdown <span class="section-meta">BY CAPITAL DEPLOYED</span></div>
+    <h2 class="section-label">Sector Breakdown <span class="section-meta">BY CAPITAL DEPLOYED</span></h2>
     <div class="chart-card">
       <div id="sectorBars" class="sector-bars"><div class="loading-overlay"><div class="spinner"></div></div></div>
     </div>
@@ -778,15 +820,15 @@ footer{
 
   <!-- INVESTORS -->
   <section id="investors">
-    <div class="section-label">Most Active Lead Investors <span class="section-meta" id="invMeta"></span></div>
-    <div id="investorGrid" class="investor-grid">
+    <h2 class="section-label">Most Active Lead Investors <span class="section-meta" id="invMeta"></span></h2>
+    <div id="investorGrid" class="investor-grid" style="min-height:200px">
       <div class="loading-overlay" style="grid-column:1/-1"><div class="spinner"></div></div>
     </div>
   </section>
 
   <!-- DEALS TABLE -->
   <section id="deals">
-    <div class="section-label">All Deals <span class="section-meta" id="dealCountLabel"></span></div>
+    <h2 class="section-label">All Deals <span class="section-meta" id="dealCountLabel"></span></h2>
     <div class="table-toolbar">
       <div class="search-box">
         <span class="search-icon">&#x1F50D;</span>
@@ -814,6 +856,31 @@ footer{
     </div>
   </section>
 
+  <!-- ABOUT: static prose for SEO and AI citation readiness -->
+  <section id="about" style="margin-top:80px">
+    <h2 class="section-label">About European VC Radar</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:40px;box-shadow:var(--shadow-sm)">
+      <div>
+        <h3 style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:12px">What is European VC Radar?</h3>
+        <p style="font-size:14px;color:var(--mid);line-height:1.7;margin-bottom:20px">European VC Radar is a public tracker of venture capital funding rounds across Europe, maintained by <a href="https://goldfish.global" target="_blank" rel="noopener noreferrer" style="color:var(--coral);text-decoration:none">Goldfish</a> — a European M&amp;A and VC advisory firm. The database covers seed investments, Series A rounds, Series B raises, and growth-stage deals across more than 30 countries, tracking capital deployed from 2020 to the present.</p>
+        <p style="font-size:14px;color:var(--mid);line-height:1.7;margin-bottom:20px">Every deal in the dataset exceeds &euro;500,000 in value. Data is sourced from press releases, regulatory filings, investor announcements, and verified news across 33 European outlets, updated monthly. The current dataset covers 609+ funding rounds totalling over &euro;142 billion in capital deployed.</p>
+
+        <h3 style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:12px">Geographic coverage</h3>
+        <p style="font-size:14px;color:var(--mid);line-height:1.7">Coverage spans the full European market: the United Kingdom, Germany, France, the Netherlands, Sweden, Denmark, Finland, Spain, Poland, and more than 20 additional countries. Each deal is tagged with the company's home country, lead investor, funding stage, and primary sector.</p>
+      </div>
+      <div>
+        <h3 style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:12px">Sectors tracked</h3>
+        <p style="font-size:14px;color:var(--mid);line-height:1.7;margin-bottom:20px">The dataset covers all major sectors attracting venture capital in Europe: Artificial Intelligence, FinTech, HealthTech, CleanTech, SaaS, DeepTech, BioTech, Cybersecurity, Mobility, and Consumer technology. Filter by sector to identify where institutional capital is concentrating in any given quarter.</p>
+
+        <h3 style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:12px">Methodology</h3>
+        <p style="font-size:14px;color:var(--mid);line-height:1.7;margin-bottom:20px">Deals are included when the round size is confirmed or reliably estimated above &euro;500K. Undisclosed-amount rounds are excluded unless a credible estimate is available. Capital amounts are converted to euros at approximate time-of-deal exchange rates. Data is updated quarterly with a 30&ndash;60 day lag for smaller deals.</p>
+
+        <h3 style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:12px">Built by Goldfish</h3>
+        <p style="font-size:14px;color:var(--mid);line-height:1.7">VC Radar is built and maintained by Goldfish to support founders raising growth-stage rounds or preparing for M&amp;A. We advise on VC fundraising from seed through Series B, sell-side transactions for SaaS, AI, CleanTech, and Salesforce ecosystem companies, and provide bespoke market intelligence. <a href="contact.html" style="color:var(--coral);text-decoration:none">Get in touch</a> if you are raising a round or considering a sale.</p>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <footer>
@@ -823,11 +890,13 @@ footer{
       VC Radar
     </div>
     <div class="footer-meta">
-      Information sourced from publicly available sources and is not complete. Only deals above &euro;500K are listed. Powered by <a href="https://supabase.com">Supabase</a>. Built for <a href="https://goldfish.global">Goldfish</a>.
+      Information sourced from publicly available sources and is not complete. Only deals above &euro;500K are listed. Powered by <a href="https://supabase.com" target="_blank" rel="noopener noreferrer">Supabase</a>. Built for <a href="https://goldfish.global" target="_blank" rel="noopener noreferrer">Goldfish</a>.
     </div>
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha256-KBLLiCX9xXRp6y97sFXpQpJE5ZmSBRHuR36ChJm2Mss=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js" integrity="sha256-/anWf4DM5AdPeNY3O7E26Ew0yyNbipHF5ChAaNpt3EI=" crossorigin="anonymous"></script>
 <script>
 // -- ANALYTICS (cookieless, no personal data) --------------------------------
 (function(){
