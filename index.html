@@ -1016,7 +1016,7 @@ function buildCountryDropdown(){
   const countries=[...new Set(allDeals.map(d=>d.country).filter(Boolean))].sort();
   const sel=document.getElementById('countrySelect');
   sel.innerHTML='<option value="">All Countries</option>'+
-    countries.map(c=>`<option value="${c}">${c}</option>`).join('');
+    countries.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
 }
 
 // Returns allDeals filtered by stage/sector/country but NOT period or search.
