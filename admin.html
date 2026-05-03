@@ -3,6 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' fonts.googleapis.com 'unsafe-inline'; font-src fonts.gstatic.com; connect-src https://swhjffkhhwktrvwiqmoe.supabase.co; img-src 'self'; object-src 'none'; base-uri 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Permissions-Policy" content="geolocation=(), camera=(), microphone=()">
 <title>VC Radar &mdash; Admin</title>
 <meta name="robots" content="noindex, nofollow">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -155,6 +159,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const ADMIN_PASSWORD = 'vcradar2026';
+function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 let currentDays = 7;
 
 function login() {
@@ -270,7 +275,7 @@ function renderPages(data) {
   if (!sorted.length) { el.innerHTML = '<tr><td class="loading">No data yet</td></tr>'; return; }
   el.innerHTML = `<tr><th>Page</th><th>Views</th></tr>` +
     sorted.map(([p,n]) => `<tr>
-      <td><div class="bar-cell"><div class="mini-bar" style="width:${Math.round((n/max)*80)+20}px"></div>${p}</div></td>
+      <td><div class="bar-cell"><div class="mini-bar" style="width:${Math.round((n/max)*80)+20}px"></div>${esc(p)}</div></td>
       <td>${n}</td>
     </tr>`).join('');
 }
@@ -289,7 +294,7 @@ function renderReferrers(data) {
   if (!sorted.length) { el.innerHTML = '<tr><td class="loading">No data yet</td></tr>'; return; }
   el.innerHTML = `<tr><th>Source</th><th>Views</th></tr>` +
     sorted.map(([r,n]) => `<tr>
-      <td><div class="bar-cell"><div class="mini-bar" style="width:${Math.round((n/max)*80)+20}px"></div>${r}</div></td>
+      <td><div class="bar-cell"><div class="mini-bar" style="width:${Math.round((n/max)*80)+20}px"></div>${esc(r)}</div></td>
       <td>${n}</td>
     </tr>`).join('');
 }
@@ -303,7 +308,7 @@ function renderRecent(data) {
       const d = new Date(r.created_at);
       const t = d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) + ' ' +
                 d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
-      return `<tr><td style="font-family:var(--mono);font-size:12px">${t}</td><td>${cleanPage(r.page)||'/'}</td></tr>`;
+      return `<tr><td style="font-family:var(--mono);font-size:12px">${esc(t)}</td><td>${esc(cleanPage(r.page)||'/')}</td></tr>`;
     }).join('');
 }
 
