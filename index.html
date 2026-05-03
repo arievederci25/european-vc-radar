@@ -569,6 +569,16 @@ footer{
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='white'/%3E%3C/svg%3E");
 }
 
+/* --- QS Filter rows --- */
+.qs-filter-divider{height:1px;background:var(--border);margin:20px 0 16px}
+.qs-filter-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.qs-filter-row:last-child{margin-bottom:0}
+.qs-filter-label{
+  font-size:11px;font-weight:700;color:var(--light);
+  text-transform:uppercase;letter-spacing:.08em;
+  padding-top:8px;min-width:56px;flex-shrink:0;
+}
+
 /* --- Update banner --- */
 .update-banner{
   background:var(--cream-2);border:1px solid var(--border);
@@ -630,7 +640,7 @@ footer{
   <section id="quarter-selector">
     <div class="quarter-section">
       <div class="qs-header">
-        <span class="qs-title">Select Time Period</span>
+        <span class="qs-title">Period &amp; Filters</span>
         <div class="qs-controls">
           <button class="qs-btn" onclick="selectAllTime()">All Time</button>
           <button class="qs-btn" onclick="selectYear(2026)">2026 YTD</button>
@@ -641,6 +651,29 @@ footer{
         </div>
       </div>
       <div id="quarterGrid"></div>
+
+      <div class="qs-filter-divider"></div>
+
+      <div class="qs-filter-row">
+        <span class="qs-filter-label">Stage</span>
+        <div class="filter-group" id="stageFilters">
+          <button class="filter-btn active" data-stage="all">All Stages</button>
+          <button class="filter-btn" data-stage="Seed">Seed</button>
+          <button class="filter-btn" data-stage="Series A">Series A</button>
+          <button class="filter-btn" data-stage="Series B">Series B</button>
+          <button class="filter-btn" data-stage="other">Growth +</button>
+        </div>
+      </div>
+      <div class="qs-filter-row">
+        <span class="qs-filter-label">Country</span>
+        <select class="country-select" id="countrySelect">
+          <option value="">All Countries</option>
+        </select>
+      </div>
+      <div class="qs-filter-row">
+        <span class="qs-filter-label">Sector</span>
+        <div class="filter-group" id="sectorFilters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      </div>
     </div>
   </section>
 
@@ -729,23 +762,11 @@ footer{
   <section id="deals">
     <div class="section-label">All Deals <span class="section-meta" id="dealCountLabel"></span></div>
     <div class="table-toolbar">
-      <div class="filter-group" id="stageFilters">
-        <button class="filter-btn active" data-stage="all">All Stages</button>
-        <button class="filter-btn" data-stage="Seed">Seed</button>
-        <button class="filter-btn" data-stage="Series A">Series A</button>
-        <button class="filter-btn" data-stage="Series B">Series B</button>
-        <button class="filter-btn" data-stage="other">Growth +</button>
-      </div>
-      <select class="country-select" id="countrySelect">
-        <option value="">All Countries</option>
-      </select>
       <div class="search-box">
         <span class="search-icon">&#x1F50D;</span>
         <input class="search-input" id="searchInput" type="text" placeholder="Search company, investor, sector, country&hellip;">
       </div>
     </div>
-
-    <div class="filter-group" id="sectorFilters" style="margin-bottom:16px;display:flex;gap:6px;flex-wrap:wrap"></div>
 
     <div class="table-wrap">
       <table class="deal-table">
@@ -971,6 +992,20 @@ function buildCountryDropdown(){
     countries.map(c=>`<option value="${c}">${c}</option>`).join('');
 }
 
+// Returns allDeals filtered by stage/sector/country but NOT period or search.
+// Used by charts that have their own period axis so they show all time
+// but still honour the global stage/sector/country selection.
+function getGlobalFiltered(){
+  let data=[...allDeals];
+  if(stageFilters.size>0) data=data.filter(d=>{
+    if(stageFilters.has('other')&&!['Seed','Series A','Series B'].includes(d.stage)) return true;
+    return stageFilters.has(d.stage);
+  });
+  if(sectorFilters.size>0) data=data.filter(d=>sectorFilters.has(d.sector));
+  if(countryFilter) data=data.filter(d=>d.country===countryFilter);
+  return data;
+}
+
 // -- FILTER ENGINE -------------------------------------------------------------
 function applyFilters(){
   let data = [...allDeals];
@@ -1134,11 +1169,12 @@ function renderAvgStageChart(){
   const quarters=[...avgStageSelected].sort();
   if(!quarters.length){document.getElementById('avgStageDelta').classList.remove('visible');return}
   const stages=['Seed','Series A','Series B'];
+  const gfAvg=getGlobalFiltered();
   const datasets=stages.map(s=>({
     label:s,
     data:quarters.map(k=>{
       const [y,q]=k.split('-');
-      const deals=allDeals.filter(d=>d.year==y&&d.quarter==q&&d.stage===s&&d.amount_eur>0);
+      const deals=gfAvg.filter(d=>d.year==y&&d.quarter==q&&d.stage===s&&d.amount_eur>0);
       return deals.length?parseFloat((deals.reduce((a,d)=>a+(d.amount_eur||0),0)/deals.length).toFixed(1)):null;
     }),
     backgroundColor:STAGE_COLORS[s],
@@ -1152,7 +1188,7 @@ function renderAvgStageChart(){
     const stages=['Seed','Series A','Series B'];
     let totalWeight=0,weightedSum=0;
     stages.forEach(s=>{
-      const d=allDeals.filter(x=>x.year==y&&x.quarter==q&&x.stage===s&&x.amount_eur>0);
+      const d=gfAvg.filter(x=>x.year==y&&x.quarter==q&&x.stage===s&&x.amount_eur>0);
       if(!d.length) return;
       const avg=d.reduce((a,x)=>a+(x.amount_eur||0),0)/d.length;
       weightedSum+=avg*d.length;
@@ -1227,7 +1263,8 @@ function renderVelocityChart(){
   const quarters=[...velocitySelected].sort();
   if(!quarters.length){document.getElementById('velocityDelta').classList.remove('visible');return}
   const labels=quarters.map(k=>{const[y,q]=k.split('-');return`Q${q}'${String(y).slice(2)}`});
-  const data=quarters.map(k=>{const[y,q]=k.split('-');return allDeals.filter(d=>d.year==y&&d.quarter==q).length});
+  const gfVel=getGlobalFiltered();
+  const data=quarters.map(k=>{const[y,q]=k.split('-');return gfVel.filter(d=>d.year==y&&d.quarter==q).length});
   const YEAR_COLORS={'2020':'rgba(45,125,210,0.8)','2021':'rgba(46,196,182,0.8)','2022':'rgba(232,116,97,0.8)','2023':'rgba(255,179,71,0.8)','2024':'rgba(139,58,47,0.8)','2025':'rgba(106,153,85,0.8)','2026':'rgba(155,89,182,0.8)'};
   const bgColors=quarters.map(k=>YEAR_COLORS[k.split('-')[0]]||'rgba(160,152,136,0.8)');
   // Delta: first vs last selected quarter
@@ -1276,8 +1313,9 @@ function renderTimelineChart(){
   const nowY2=new Date().getFullYear();
   for(let y=2020;y<=nowY2;y++) for(let q=1;q<=4;q++){if(y===nowY2&&q>nowQ2)break;quarters.push({y,q})}
   const labels=quarters.map(({y,q})=>`Q${q}'${String(y).slice(2)}`);
-  const capitals=quarters.map(({y,q})=>Math.round(allDeals.filter(d=>d.year===y&&d.quarter===q).reduce((s,d)=>s+(d.amount_eur||0),0)));
-  const deals=quarters.map(({y,q})=>allDeals.filter(d=>d.year===y&&d.quarter===q).length);
+  const gf=getGlobalFiltered();
+  const capitals=quarters.map(({y,q})=>Math.round(gf.filter(d=>d.year===y&&d.quarter===q).reduce((s,d)=>s+(d.amount_eur||0),0)));
+  const deals=quarters.map(({y,q})=>gf.filter(d=>d.year===y&&d.quarter===q).length);
 
   // Highlight selected quarters
   const bgColors=quarters.map(({y,q})=>{
