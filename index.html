@@ -569,14 +569,24 @@ footer{
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='white'/%3E%3C/svg%3E");
 }
 
-/* --- QS Filter rows --- */
-.qs-filter-divider{height:1px;background:var(--border);margin:20px 0 16px}
-.qs-filter-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+/* --- QS two-column layout --- */
+.qs-columns{display:grid;grid-template-columns:auto 1px 1fr;align-items:start}
+.qs-col-period{padding-right:28px}
+.qs-col-sep{background:var(--border);align-self:stretch}
+.qs-col-filters{padding-left:28px}
+.qs-col-filters .qs-title{margin-bottom:16px;display:block}
+.qs-filter-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;flex-wrap:wrap}
 .qs-filter-row:last-child{margin-bottom:0}
 .qs-filter-label{
   font-size:11px;font-weight:700;color:var(--light);
   text-transform:uppercase;letter-spacing:.08em;
   padding-top:8px;min-width:56px;flex-shrink:0;
+}
+@media(max-width:900px){
+  .qs-columns{grid-template-columns:1fr}
+  .qs-col-sep{height:1px;width:auto;margin:20px 0}
+  .qs-col-period{padding-right:0}
+  .qs-col-filters{padding-left:0}
 }
 
 /* --- Update banner --- */
@@ -639,40 +649,52 @@ footer{
   <!-- QUARTER SELECTOR -->
   <section id="quarter-selector">
     <div class="quarter-section">
-      <div class="qs-header">
-        <span class="qs-title">Period &amp; Filters</span>
-        <div class="qs-controls">
-          <button class="qs-btn" onclick="selectAllTime()">All Time</button>
-          <button class="qs-btn" onclick="selectYear(2026)">2026 YTD</button>
-          <button class="qs-btn" onclick="selectYear(2025)">2025</button>
-          <button class="qs-btn" onclick="selectYear(2024)">2024</button>
-          <button class="qs-btn" onclick="selectLast(4)">Last 4Q</button>
-          <button class="qs-btn coral" onclick="selectLast(2)">Last 60 days</button>
-        </div>
-      </div>
-      <div id="quarterGrid"></div>
+      <div class="qs-columns">
 
-      <div class="qs-filter-divider"></div>
-
-      <div class="qs-filter-row">
-        <span class="qs-filter-label">Stage</span>
-        <div class="filter-group" id="stageFilters">
-          <button class="filter-btn active" data-stage="all">All Stages</button>
-          <button class="filter-btn" data-stage="Seed">Seed</button>
-          <button class="filter-btn" data-stage="Series A">Series A</button>
-          <button class="filter-btn" data-stage="Series B">Series B</button>
-          <button class="filter-btn" data-stage="other">Growth +</button>
+        <!-- LEFT: period picker -->
+        <div class="qs-col-period">
+          <div class="qs-header">
+            <span class="qs-title">Period</span>
+            <div class="qs-controls">
+              <button class="qs-btn" onclick="selectAllTime()">All Time</button>
+              <button class="qs-btn" onclick="selectYear(2026)">2026 YTD</button>
+              <button class="qs-btn" onclick="selectYear(2025)">2025</button>
+              <button class="qs-btn" onclick="selectYear(2024)">2024</button>
+              <button class="qs-btn" onclick="selectLast(4)">Last 4Q</button>
+              <button class="qs-btn coral" onclick="selectLast(2)">Last 60 days</button>
+            </div>
+          </div>
+          <div id="quarterGrid"></div>
         </div>
-      </div>
-      <div class="qs-filter-row">
-        <span class="qs-filter-label">Country</span>
-        <select class="country-select" id="countrySelect">
-          <option value="">All Countries</option>
-        </select>
-      </div>
-      <div class="qs-filter-row">
-        <span class="qs-filter-label">Sector</span>
-        <div class="filter-group" id="sectorFilters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+
+        <!-- vertical rule -->
+        <div class="qs-col-sep"></div>
+
+        <!-- RIGHT: filters -->
+        <div class="qs-col-filters">
+          <span class="qs-title">Filters</span>
+          <div class="qs-filter-row">
+            <span class="qs-filter-label">Stage</span>
+            <div class="filter-group" id="stageFilters">
+              <button class="filter-btn active" data-stage="all">All Stages</button>
+              <button class="filter-btn" data-stage="Seed">Seed</button>
+              <button class="filter-btn" data-stage="Series A">Series A</button>
+              <button class="filter-btn" data-stage="Series B">Series B</button>
+              <button class="filter-btn" data-stage="other">Growth +</button>
+            </div>
+          </div>
+          <div class="qs-filter-row">
+            <span class="qs-filter-label">Country</span>
+            <select class="country-select" id="countrySelect">
+              <option value="">All Countries</option>
+            </select>
+          </div>
+          <div class="qs-filter-row">
+            <span class="qs-filter-label">Sector</span>
+            <div class="filter-group" id="sectorFilters" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+          </div>
+        </div>
+
       </div>
     </div>
   </section>
