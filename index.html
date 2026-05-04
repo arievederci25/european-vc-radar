@@ -935,8 +935,8 @@ let sortDir = -1;
 let charts = {};
 
 // -- HELPERS ------------------------------------------------------------------
-const fmt  = (n,d=0)=> n==null?'\u2014':'\u20AC'+Number(n).toLocaleString('en',{maximumFractionDigits:d})+'M';
-const fmtB = n=> n==null?'\u2014': n>=1000 ? '\u20AC'+(n/1000).toFixed(1)+'B' : '\u20AC'+Math.round(n)+'M';
+const fmt  = n=> n==null?'\u2014':n>=1000?'\u20AC'+(n/1000).toFixed(1)+'B':'\u20AC'+Number(n).toFixed(1)+'M';
+const fmtB = n=> n==null?'\u2014': n>=1000 ? '\u20AC'+(n/1000).toFixed(1)+'B' : '\u20AC'+n.toFixed(1)+'M';
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 
 function stageBadge(s){
