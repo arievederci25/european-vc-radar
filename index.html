@@ -8,7 +8,7 @@
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Permissions-Policy" content="geolocation=(), camera=(), microphone=()">
 <title>European VC Radar &mdash; Where European VC Money Moves</title>
-<meta name="description" content="Track every significant venture capital funding round across Europe &mdash; seed to growth. 609+ deals, &euro;142B+ capital, 30+ countries.">
+<meta name="description" content="Track every significant venture capital funding round across Europe &mdash; seed to growth. 2,000+ deals, &euro;184B+ capital, 30+ countries.">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://www.vcradar.nl/">
 
@@ -16,7 +16,7 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://www.vcradar.nl/">
 <meta property="og:title" content="European VC Radar &mdash; Where European VC Money Moves">
-<meta property="og:description" content="Track every significant venture capital funding round across Europe. 609+ deals, &euro;142B+ capital tracked across 30+ countries.">
+<meta property="og:description" content="Track every significant venture capital funding round across Europe. 2,000+ deals, &euro;184B+ capital tracked across 30+ countries.">
 <meta property="og:image" content="https://www.vcradar.nl/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -26,7 +26,7 @@
 <!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="European VC Radar &mdash; Where European VC Money Moves">
-<meta name="twitter:description" content="Track every significant venture capital funding round across Europe. 609+ deals, &euro;142B+ capital tracked across 30+ countries.">
+<meta name="twitter:description" content="Track every significant venture capital funding round across Europe. 2,000+ deals, &euro;184B+ capital tracked across 30+ countries.">
 <meta name="twitter:image" content="https://www.vcradar.nl/og-image.png">
 
 <!-- Author / hreflang -->
@@ -82,7 +82,7 @@
     "dataset": {
       "@type": "Dataset",
       "name": "European VC Funding Rounds 2020–2026",
-      "description": "609+ venture capital funding rounds across Europe: company, country, funding stage, round size in EUR, lead investor, sector, and quarter.",
+      "description": "2,000+ venture capital funding rounds across Europe: company, country, funding stage, round size in EUR, lead investor, sector, and quarter.",
       "keywords": ["venture capital", "VC", "Europe", "startup funding", "seed", "Series A", "Series B", "Series C", "growth equity", "Netherlands", "Germany", "France", "UK", "Sweden"],
       "spatialCoverage": "Europe",
       "temporalCoverage": "2020-01-01/",
@@ -863,7 +863,7 @@ footer{
       <div>
         <h3 style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:10px">What is European VC Radar?</h3>
         <p style="font-size:12px;color:var(--mid);line-height:1.7;margin-bottom:20px">European VC Radar is a public tracker of venture capital funding rounds across Europe, maintained by <a href="https://goldfish.global" target="_blank" rel="noopener noreferrer" style="color:var(--coral);text-decoration:none">Goldfish</a> — a European M&amp;A and VC advisory firm. The database covers seed investments, Series A rounds, Series B raises, and growth-stage deals across more than 30 countries, tracking capital deployed from 2020 to the present.</p>
-        <p style="font-size:12px;color:var(--mid);line-height:1.7;margin-bottom:20px">Every deal in the dataset exceeds &euro;500,000 in value. Data is sourced from press releases, regulatory filings, investor announcements, and verified news across 200+ European outlets, updated monthly. The current dataset covers 609+ funding rounds totalling over &euro;142 billion in capital deployed.</p>
+        <p style="font-size:12px;color:var(--mid);line-height:1.7;margin-bottom:20px">Every deal in the dataset exceeds &euro;500,000 in value. Data is sourced from press releases, regulatory filings, investor announcements, and verified news across 200+ European outlets, updated monthly. The current dataset covers 2,000+ funding rounds totalling over &euro;184 billion in capital deployed.</p>
 
         <h3 style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:10px">Geographic coverage</h3>
         <p style="font-size:12px;color:var(--mid);line-height:1.7">Coverage spans the full European market: the United Kingdom, Germany, France, the Netherlands, Sweden, Denmark, Finland, Spain, Poland, and more than 20 additional countries. Each deal is tagged with the company's home country, lead investor, funding stage, and primary sector.</p>
@@ -978,7 +978,7 @@ async function loadAllDeals(){
 // -- INIT ---------------------------------------------------------------------
 async function init(){
   getChartDefaults();
-  document.getElementById('lastUpdated').textContent = 'Updated Apr 28, 2026 (609 deals, \u20AC142.1B)';
+  document.getElementById('lastUpdated').textContent = 'Updated May 4, 2026 (2,034 deals, \u20AC184B)';
 
   allDeals = await loadAllDeals();
   buildYearOverview();
