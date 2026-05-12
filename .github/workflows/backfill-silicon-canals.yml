@@ -6,6 +6,7 @@ on:
 jobs:
   backfill:
     runs-on: ubuntu-latest
+    timeout-minutes: 350  # Long-running historical backfill
     steps:
       - uses: actions/checkout@v4
 

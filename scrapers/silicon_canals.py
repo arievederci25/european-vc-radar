@@ -11,12 +11,25 @@ import requests
 from bs4 import BeautifulSoup
 import anthropic
 
+# cloudscraper bypasses Silicon Canals' Cloudflare protection (which blocks
+# datacenter IPs like GitHub Actions runners with a 403).
+try:
+    import cloudscraper
+    sc_session = cloudscraper.create_scraper()
+except ImportError:
+    sc_session = requests
+
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_KEY = os.environ["SUPABASE_KEY"]
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 
 FEED_URL = "https://siliconcanals.com/feed/"
-HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; VCRadarBot/1.0)"}
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.9",
+}
 
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
@@ -31,8 +44,10 @@ def supabase_get(path, params=""):
 
 
 def supabase_upsert(table, rows):
+    # on_conflict=company,year,quarter matches the UNIQUE constraint on the deals
+    # table so merge-duplicates actually merges instead of returning a 409.
     r = requests.post(
-        f"{SUPABASE_URL}/rest/v1/{table}",
+        f"{SUPABASE_URL}/rest/v1/{table}?on_conflict=company,year,quarter",
         headers={
             "apikey": SUPABASE_KEY,
             "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -41,12 +56,13 @@ def supabase_upsert(table, rows):
         },
         json=rows,
     )
-    r.raise_for_status()
+    if not r.ok:
+        raise requests.exceptions.HTTPError(f"HTTP {r.status_code}: {r.text[:300]}", response=r)
 
 
 def fetch_article_text(url):
     try:
-        r = requests.get(url, headers=HEADERS, timeout=15)
+        r = sc_session.get(url, headers=HEADERS, timeout=15)
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "html.parser")
         for tag in soup(["nav", "footer", "aside", "script", "style"]):
@@ -58,28 +74,54 @@ def fetch_article_text(url):
         return ""
 
 
+# Stage values the deals table CHECK constraint accepts.
+VALID_STAGES = {
+    "Seed", "Series A", "Series B", "Series C", "Series D",
+    "Series E", "Series F", "Series G", "Series H", "Series I", "Series J",
+    "Series E+", "IPO", "Growth",
+}
+STAGE_REMAP = {
+    "Pre-Seed": "Seed", "Pre Seed": "Seed", "Preseed": "Seed",
+    "Late Stage": "Growth", "Growth Equity": "Growth", "PE": "Growth", "Private Equity": "Growth",
+}
+
+
+def normalize_stage(stage):
+    if not stage:
+        return None
+    s = stage.strip()
+    if s in VALID_STAGES:
+        return s
+    return STAGE_REMAP.get(s)
+
+
 def extract_deal(title, text, url, pub_date):
-    prompt = f"""You are extracting structured data from a startup funding article.
+    prompt = f"""You are extracting structured data from a European startup funding article.
 
 Article title: {title}
 Article URL: {url}
 Article text (first 4000 chars):
 {text}
 
-Extract the following fields as JSON. Use null if unknown:
+Extract as JSON. Return the literal "null" if NOT a primary funding round (skip M&A/acquisitions, grants, pure debt, product launches, opinion pieces):
 {{
-  "company": "company name (string)",
-  "country": "2-letter ISO country code of the company HQ (string, e.g. NL, DE, FR)",
-  "flag": "flag emoji for that country (string)",
-  "stage": "one of: Pre-Seed, Seed, Series A, Series B, Series C, Series D, Growth, Debt, Grant, Acquisition (string)",
+  "company": "company name receiving the funding",
+  "country": "2-letter ISO country code of company HQ (NL, DE, FR, UK, etc)",
+  "flag": "flag emoji",
+  "stage": "EXACTLY one of: Seed, Series A, Series B, Series C, Series D, Series E, Series F, Series G, Series H, Series I, Series J, Series E+, IPO, Growth",
   "amount_eur": "deal size in EUR millions as a number, e.g. 12.5 (number or null)",
-  "amount_display": "human-readable string e.g. '€12.5M' or '€150M' (string or null)",
-  "sector": "one of: SaaS, AI, Fintech, Healthtech, Cleantech, Deeptech, E-commerce, Mobility, Proptech, Edtech, Cybersecurity, Logistics, Foodtech, Other (string)",
-  "lead_investor": "name of lead investor firm, or 'Undisclosed' (string)",
-  "description": "one sentence describing what the company does (string)"
+  "amount_display": "human-readable e.g. '€12.5M' or '€150M' (string or null)",
+  "sector": "one of: SaaS, AI, Fintech, Healthtech, Cleantech, Deeptech, E-commerce, Mobility, Proptech, Edtech, Cybersecurity, Logistics, Foodtech, Other",
+  "lead_investor": "name of lead investor firm, or 'Undisclosed'",
+  "description": "one sentence describing what the company does"
 }}
 
-Only return valid JSON, nothing else. If this article is NOT about a funding round, return null.
+Stage mapping: Pre-Seed -> Seed. Late-stage/private-equity without a series letter -> Growth.
+Currency: Convert USD/GBP to EUR (USD*0.92, GBP*1.17).
+Company must be European (EU + UK + Switzerland + Norway + Iceland). Return "null" if not European.
+For K (thousands) amounts like "€600K", amount_eur should be 0.6 (i.e. millions).
+
+Return ONLY the JSON object or the literal "null". No prose, no markdown.
 """
     try:
         msg = client.messages.create(
@@ -88,9 +130,17 @@ Only return valid JSON, nothing else. If this article is NOT about a funding rou
             messages=[{"role": "user", "content": prompt}],
         )
         raw = msg.content[0].text.strip()
-        if raw.lower() == "null":
+        raw = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw, flags=re.MULTILINE).strip()
+        if raw.lower() == "null" or not raw:
             return None
-        return json.loads(raw)
+        data = json.loads(raw)
+        if not data.get("company") or not data.get("country"):
+            return None
+        normalized = normalize_stage(data.get("stage"))
+        if not normalized:
+            return None
+        data["stage"] = normalized
+        return data
     except Exception as e:
         print(f"  Claude extraction failed: {e}")
         return None
