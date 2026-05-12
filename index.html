@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' fonts.googleapis.com 'unsafe-inline'; font-src fonts.gstatic.com; connect-src 'self' https://swhjffkhhwktrvwiqmoe.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' fonts.googleapis.com cdn.jsdelivr.net 'unsafe-inline'; font-src fonts.gstatic.com; connect-src 'self' https://swhjffkhhwktrvwiqmoe.supabase.co; img-src 'self' data: cdn.jsdelivr.net; object-src 'none'; base-uri 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Permissions-Policy" content="geolocation=(), camera=(), microphone=()">
@@ -98,6 +98,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://swhjffkhhwktrvwiqmoe.supabase.co" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<!-- flag-icons: SVG country flags. Renders consistently on every OS (incl. Windows
+     where unicode flag emojis fall back to letter pairs like "NL"/"EE"). -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.5.0/css/flag-icons.min.css">
 <link rel="preload" href="/data/deals.json" as="fetch" type="application/json" crossorigin>
 <script>
 // Single CDN request to a pre-computed static deals snapshot. GitHub Pages
@@ -482,7 +485,13 @@ section{margin-bottom:80px}
   width:34px;height:34px;border-radius:8px;
   background:var(--cream-2);
   display:flex;align-items:center;justify-content:center;
-  font-size:16px;flex-shrink:0;
+  font-size:16px;flex-shrink:0;overflow:hidden;
+}
+/* SVG flag fills the avatar nicely with rounded corners preserved by parent overflow:hidden */
+.company-avatar .fi{
+  width:100%;height:100%;
+  background-size:cover;background-position:center;
+  line-height:1;
 }
 .company-name{font-weight:700;color:var(--dark);font-size:13px}
 .company-country{font-size:11px;color:var(--light)}
@@ -956,59 +965,62 @@ const SECTOR_COLORS = ['#e87461','#d4604e','#c94e3a','#f0a090','#f5c5bc','#8b3a2
 const STAGE_COLORS = {'Seed':'#2d7dd2','Series A':'#2ec4b6','Series B':'#e87461',
   'Series C':'#d4604e','Series D':'#8b3a2f','other':'#a09888'};
 
-// Country -> flag emoji. Used when a deal row has no flag set or has a 2-letter
-// code in d.flag instead of an actual emoji (older Silicon Canals rows did this).
-// Keys cover the full country names we normalized to in the database, plus
-// common 2-letter ISO fallbacks just in case.
-const COUNTRY_FLAGS = {
-  'Netherlands':'🇳🇱','NL':'🇳🇱',
-  'United Kingdom':'🇬🇧','UK':'🇬🇧','GB':'🇬🇧',
-  'Germany':'🇩🇪','DE':'🇩🇪',
-  'France':'🇫🇷','FR':'🇫🇷',
-  'Sweden':'🇸🇪','SE':'🇸🇪',
-  'Switzerland':'🇨🇭','CH':'🇨🇭',
-  'Spain':'🇪🇸','ES':'🇪🇸',
-  'Belgium':'🇧🇪','BE':'🇧🇪',
-  'Denmark':'🇩🇰','DK':'🇩🇰',
-  'Finland':'🇫🇮','FI':'🇫🇮',
-  'Italy':'🇮🇹','IT':'🇮🇹',
-  'Poland':'🇵🇱','PL':'🇵🇱',
-  'Estonia':'🇪🇪','EE':'🇪🇪',
-  'Austria':'🇦🇹','AT':'🇦🇹',
-  'Ireland':'🇮🇪','IE':'🇮🇪',
-  'Norway':'🇳🇴','NO':'🇳🇴',
-  'Czech Republic':'🇨🇿','CZ':'🇨🇿',
-  'Portugal':'🇵🇹','PT':'🇵🇹',
-  'Lithuania':'🇱🇹','LT':'🇱🇹',
-  'Hungary':'🇭🇺','HU':'🇭🇺',
-  'Romania':'🇷🇴','RO':'🇷🇴',
-  'Latvia':'🇱🇻','LV':'🇱🇻',
-  'Iceland':'🇮🇸','IS':'🇮🇸',
-  'Israel':'🇮🇱','IL':'🇮🇱',
-  'Greece':'🇬🇷','GR':'🇬🇷',
-  'Bulgaria':'🇧🇬','BG':'🇧🇬',
-  'Slovakia':'🇸🇰','SK':'🇸🇰',
-  'Luxembourg':'🇱🇺','LU':'🇱🇺',
-  'Serbia':'🇷🇸','RS':'🇷🇸',
-  'Croatia':'🇭🇷','HR':'🇭🇷',
-  'Slovenia':'🇸🇮','SI':'🇸🇮',
-  'Ukraine':'🇺🇦','UA':'🇺🇦',
-  'Belarus':'🇧🇾','BY':'🇧🇾',
-  'Cyprus':'🇨🇾','CY':'🇨🇾',
-  'Malta':'🇲🇹','MT':'🇲🇹',
-  'Turkey':'🇹🇷','TR':'🇹🇷',
-  'Georgia':'🇬🇪','GE':'🇬🇪',
-  'Singapore':'🇸🇬','SG':'🇸🇬',
-  'Canada':'🇨🇦','CA':'🇨🇦',
-  'United States':'🇺🇸','US':'🇺🇸',
-  'Australia':'🇦🇺','AU':'🇦🇺',
-  'Japan':'🇯🇵','JP':'🇯🇵',
-  'United Arab Emirates':'🇦🇪','AE':'🇦🇪',
-  'Bermuda':'🇧🇲','BM':'🇧🇲',
+// Country (full name or 2-letter code) -> lowercase ISO 3166-1 alpha-2 code,
+// which is what the flag-icons CSS library uses as its class suffix
+// (e.g. fi-nl, fi-de). Covers every country currently present in the deals table
+// plus the common ISO codes as keys just in case.
+const COUNTRY_ISO = {
+  'Netherlands':'nl','NL':'nl',
+  'United Kingdom':'gb','UK':'gb','GB':'gb',
+  'Germany':'de','DE':'de',
+  'France':'fr','FR':'fr',
+  'Sweden':'se','SE':'se',
+  'Switzerland':'ch','CH':'ch',
+  'Spain':'es','ES':'es',
+  'Belgium':'be','BE':'be',
+  'Denmark':'dk','DK':'dk',
+  'Finland':'fi','FI':'fi',
+  'Italy':'it','IT':'it',
+  'Poland':'pl','PL':'pl',
+  'Estonia':'ee','EE':'ee',
+  'Austria':'at','AT':'at',
+  'Ireland':'ie','IE':'ie',
+  'Norway':'no','NO':'no',
+  'Czech Republic':'cz','CZ':'cz',
+  'Portugal':'pt','PT':'pt',
+  'Lithuania':'lt','LT':'lt',
+  'Hungary':'hu','HU':'hu',
+  'Romania':'ro','RO':'ro',
+  'Latvia':'lv','LV':'lv',
+  'Iceland':'is','IS':'is',
+  'Israel':'il','IL':'il',
+  'Greece':'gr','GR':'gr',
+  'Bulgaria':'bg','BG':'bg',
+  'Slovakia':'sk','SK':'sk',
+  'Luxembourg':'lu','LU':'lu',
+  'Serbia':'rs','RS':'rs',
+  'Croatia':'hr','HR':'hr',
+  'Slovenia':'si','SI':'si',
+  'Ukraine':'ua','UA':'ua',
+  'Belarus':'by','BY':'by',
+  'Cyprus':'cy','CY':'cy',
+  'Malta':'mt','MT':'mt',
+  'Turkey':'tr','TR':'tr',
+  'Georgia':'ge','GE':'ge',
+  'Singapore':'sg','SG':'sg',
+  'Canada':'ca','CA':'ca',
+  'United States':'us','US':'us',
+  'Australia':'au','AU':'au',
+  'Japan':'jp','JP':'jp',
+  'United Arab Emirates':'ae','AE':'ae',
+  'Bermuda':'bm','BM':'bm',
 };
+// Returns a `<span class="fi fi-xx"></span>` for a known country (rendered as an
+// SVG flag by flag-icons), or a generic 🏢 fallback if the country isn't mapped.
 function countryFlag(country){
   if(!country) return '🏢';
-  return COUNTRY_FLAGS[country] || COUNTRY_FLAGS[country.toUpperCase()] || '🏢';
+  const iso = COUNTRY_ISO[country] || COUNTRY_ISO[country.toUpperCase()];
+  return iso ? `<span class="fi fi-${iso}" aria-label="${esc(country)} flag"></span>` : '🏢';
 }
 
 // -- STATE --------------------------------------------------------------------
@@ -1287,7 +1299,7 @@ function renderTable(){
   tbody.innerHTML=filteredDeals.map(d=>`
     <tr>
       <td><div class="company-cell">
-        <div class="company-avatar">${d.flag || countryFlag(d.country)}</div>
+        <div class="company-avatar">${countryFlag(d.country)}</div>
         <div><div class="company-name">${esc(d.company)}</div><div class="company-country">${esc(d.country)}</div></div>
       </div></td>
       <td>${stageBadge(d.stage)}</td>
