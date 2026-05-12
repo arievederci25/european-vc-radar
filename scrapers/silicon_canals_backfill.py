@@ -63,6 +63,12 @@ SKIP_SLUG_KEYWORDS = [
 # Year cutoff (deals before this year are skipped).
 MIN_YEAR = 2024
 
+# Inclusion policy (documented in the site footer):
+# - Deals are included when the round size is confirmed or reliably estimated
+#   above EUR 0.5M (EUR 500K).
+# - Undisclosed-amount rounds are excluded.
+MIN_AMOUNT_EUR_M = 0.5
+
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 
@@ -392,14 +398,15 @@ def main():
             continue
         deal["stage"] = normalized_stage
 
-        # Standardise amount_display to a single format: "€X.YM" with trailing .0
-        # stripped (no K, no B). Whatever Claude returned is overridden so the
-        # whole table stays consistent.
-        if deal.get("amount_eur") is not None:
-            v = round(float(deal["amount_eur"]) * 10) / 10
-            deal["amount_display"] = "€" + (str(int(v)) if v == int(v) else str(v)) + "M"
-        else:
-            deal["amount_display"] = None
+        # Inclusion policy: must have a confirmed amount >= MIN_AMOUNT_EUR_M.
+        amount = deal.get("amount_eur")
+        if amount is None or float(amount) < MIN_AMOUNT_EUR_M:
+            skipped_not_funding += 1
+            continue
+
+        # Standardise amount_display to a single "€X.YM" format (no K, no B).
+        v = round(float(amount) * 10) / 10
+        deal["amount_display"] = "€" + (str(int(v)) if v == int(v) else str(v)) + "M"
 
         deal.update({
             "year": year,

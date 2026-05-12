@@ -2,6 +2,24 @@
 
 This directory contains scrapers for extracting funding deal data from Silicon Canals.
 
+## Inclusion policy
+
+Both scrapers enforce the rules published in the site footer:
+
+1. **Round size confirmed and ≥ €0.5M.** Deals with `amount_eur < 0.5` are skipped.
+2. **Undisclosed-amount rounds excluded.** Deals where the article doesn't state
+   a concrete amount (so the LLM returns `amount_eur: null`) are skipped.
+3. **EUR conversion.** USD/GBP amounts are converted to euros at the
+   approximate time-of-deal exchange rate by the extraction prompt.
+4. **Europe only.** The extraction prompt asks the LLM to return `null` if the
+   company isn't headquartered in the EU + UK + CH + NO + IS.
+
+The minimum amount threshold lives in one constant in each scraper:
+
+```python
+MIN_AMOUNT_EUR_M = 0.5  # change here if the policy ever shifts
+```
+
 ## Scrapers
 
 ### `silicon_canals.py` - Regular Updates (RSS Feed)

@@ -23,6 +23,12 @@ SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_KEY = os.environ["SUPABASE_KEY"]
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 
+# Inclusion policy (documented in the site footer):
+# - Deals are included when the round size is confirmed or reliably estimated
+#   above EUR 0.5M (EUR 500K).
+# - Undisclosed-amount rounds are excluded.
+MIN_AMOUNT_EUR_M = 0.5
+
 FEED_URL = "https://siliconcanals.com/feed/"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -197,14 +203,22 @@ def main():
             skipped += 1
             continue
 
+        # Inclusion policy: must have a confirmed amount >= MIN_AMOUNT_EUR_M.
+        amount = deal.get("amount_eur")
+        if amount is None:
+            print(f"  Skipping: amount undisclosed")
+            skipped += 1
+            continue
+        if float(amount) < MIN_AMOUNT_EUR_M:
+            print(f"  Skipping: amount €{amount}M is below €{MIN_AMOUNT_EUR_M}M minimum")
+            skipped += 1
+            continue
+
         year, quarter, announced_date = parse_date(entry.get("published", ""))
 
         # Standardise amount_display to a single "€X.YM" format (no K, no B).
-        if deal.get("amount_eur") is not None:
-            v = round(float(deal["amount_eur"]) * 10) / 10
-            deal["amount_display"] = "€" + (str(int(v)) if v == int(v) else str(v)) + "M"
-        else:
-            deal["amount_display"] = None
+        v = round(float(amount) * 10) / 10
+        deal["amount_display"] = "€" + (str(int(v)) if v == int(v) else str(v)) + "M"
 
         deal.update({
             "year": year,
