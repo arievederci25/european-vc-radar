@@ -96,6 +96,26 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://swhjffkhhwktrvwiqmoe.supabase.co" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<script>
+// Kick off deal fetching IMMEDIATELY, in parallel with downloading the chart.js
+// and supabase-js bundles at the bottom of the page. By the time those scripts
+// finish loading, the data is usually already here. Trims ~300-600ms off the
+// time-to-interactive on cold loads.
+(function(){
+  const SB = 'https://swhjffkhhwktrvwiqmoe.supabase.co';
+  const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3aGpmZmtoaHdrdHJ2d2lxbW9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTY5NDYsImV4cCI6MjA5MDc5Mjk0Nn0.XjNLCy3Fahc9AlitTpLWMQFRFC8HXh3OVT5iaIeFrNE';
+  const COLS = 'year,quarter,company,country,flag,stage,amount_eur,amount_display,sector,lead_investor,description';
+  const PAGE = 1000;
+  const MAX_PAGES = 8;
+  const headers = {apikey: KEY, Authorization: 'Bearer ' + KEY};
+  const url = i => `${SB}/rest/v1/deals?select=${COLS}&order=year.asc,quarter.asc,amount_eur.desc.nullslast&offset=${i*PAGE}&limit=${PAGE}`;
+  window.__dealsPromise = Promise.all(
+    Array.from({length: MAX_PAGES}, (_, i) => fetch(url(i), {headers}).then(r => r.ok ? r.json() : []))
+  ).then(pages => pages.flat());
+})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* --- DESIGN TOKENS (Goldfish-inspired) --- */
@@ -962,15 +982,25 @@ function getChartDefaults(){
 function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id]}}
 
 // -- LOAD DATA ----------------------------------------------------------------
-// Supabase caps single SELECT at 1000 rows, so we paginate. With ~3.7k deals
-// today, we fire 6 parallel range requests (capacity 6,000) instead of
-// sequential — cuts page load from ~2s to ~400ms.
+// The page fires the deal fetch in <head> via raw fetch() (see __dealsPromise)
+// so it runs in parallel with chart.js + supabase-js loading. By the time we
+// get here those bundles are downloaded and the data is usually already done.
+// Falls back to a fresh supabase-js fetch if the prefetch failed.
+const DEAL_COLUMNS = 'year,quarter,company,country,flag,stage,amount_eur,amount_display,sector,lead_investor,description';
+
 async function loadAllDeals(){
+  if (window.__dealsPromise) {
+    try {
+      const data = await window.__dealsPromise;
+      if (Array.isArray(data) && data.length) return data;
+    } catch (e) { /* fall through */ }
+  }
+  // Fallback: use the supabase-js client.
   const PAGE = 1000;
-  const PARALLEL_PAGES = 6;
+  const MAX_PAGES = 8;
   const pages = await Promise.all(
-    Array.from({length: PARALLEL_PAGES}, (_, i) =>
-      db.from('deals').select('*')
+    Array.from({length: MAX_PAGES}, (_, i) =>
+      db.from('deals').select(DEAL_COLUMNS)
         .order('year').order('quarter')
         .order('amount_eur', {ascending: false, nullsFirst: false})
         .range(i * PAGE, (i + 1) * PAGE - 1)
