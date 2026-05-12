@@ -60,8 +60,8 @@ SKIP_SLUG_KEYWORDS = [
     "career", "opinion", "interview-", "webinar", "podcast",
 ]
 
-# Pre-2020 cutoff
-MIN_YEAR = 2020
+# Year cutoff (deals before this year are skipped).
+MIN_YEAR = 2024
 
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
@@ -79,8 +79,10 @@ def supabase_get(path, params=""):
 
 
 def supabase_upsert(table, rows):
+    # The deals table has UNIQUE (company, year, quarter) — Supabase needs that
+    # on_conflict target explicitly for merge-duplicates to work.
     r = requests.post(
-        f"{SUPABASE_URL}/rest/v1/{table}",
+        f"{SUPABASE_URL}/rest/v1/{table}?on_conflict=company,year,quarter",
         headers={
             "apikey": SUPABASE_KEY,
             "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -90,7 +92,11 @@ def supabase_upsert(table, rows):
         json=rows,
         timeout=30,
     )
-    r.raise_for_status()
+    if not r.ok:
+        # Surface the actual error from Supabase for easier debugging.
+        raise requests.exceptions.HTTPError(
+            f"HTTP {r.status_code}: {r.text[:300]}", response=r
+        )
 
 
 def get_all_existing_source_urls():
@@ -147,9 +153,17 @@ def fetch_sitemap_urls(sitemap_url):
         return []
 
 
+# Auto-generated SEO-spam URL pattern: slug starts with a short letter prefix
+# like /sc-n-..., /sc-d-..., /k-t-..., /r-t-..., /z-t-..., /k-bt-..., /r-tns-...
+# These pages 404 in practice (~30% of URLs match a funding keyword by coincidence).
+SEO_SPAM_PREFIX_RE = re.compile(r"^/[a-z]{1,3}-[a-z]{1,4}-")
+
+
 def looks_like_funding(url):
     """Cheap URL-slug filter for funding articles."""
     slug = urlparse(url).path.lower()
+    if SEO_SPAM_PREFIX_RE.match(slug):
+        return False
     if any(skip in slug for skip in SKIP_SLUG_KEYWORDS):
         return False
     if any(kw in slug for kw in FUNDING_SLUG_KEYWORDS):
@@ -211,14 +225,14 @@ def parse_iso_date(pub):
 # Cacheable system prompt - reused across all extractions
 SYSTEM_PROMPT = """You extract structured data from European startup funding articles.
 
-Output ONLY valid JSON matching this schema, or the literal string "null" if the article is NOT a funding announcement (skip M&A unless it's clearly an investment round, skip product launches, skip opinion pieces, skip events).
+Output ONLY valid JSON matching this schema, or the literal string "null" if the article is NOT a primary funding round (skip pure M&A/acquisitions, grants, debt-only news, product launches, opinion pieces, events, listicles).
 
 Schema:
 {
   "company": "company name receiving the funding",
   "country": "2-letter ISO country code of company HQ (e.g. NL, DE, FR, UK)",
   "flag": "flag emoji for that country",
-  "stage": "one of: Pre-Seed, Seed, Series A, Series B, Series C, Series D, Series E, Growth, Debt, Grant, Acquisition",
+  "stage": "one of EXACTLY these values: Seed, Series A, Series B, Series C, Series D, Series E, Series F, Series G, Series H, Series I, Series J, Series E+, IPO, Growth",
   "amount_eur": "deal size in EUR millions as a number (e.g. 12.5), or null if undisclosed",
   "amount_display": "human-readable e.g. '€12.5M' or '€150M' or null",
   "sector": "one of: SaaS, AI, Fintech, Healthtech, Cleantech, Deeptech, E-commerce, Mobility, Proptech, Edtech, Cybersecurity, Logistics, Foodtech, Other",
@@ -226,11 +240,45 @@ Schema:
   "description": "one-sentence description of what the company does"
 }
 
-Rules:
+Stage mapping rules:
+- Pre-Seed funding rounds -> use "Seed"
+- Late-stage / pre-IPO / private equity rounds without a series letter -> use "Growth"
+- Debt facilities, grants, or acquisitions -> return "null" (not a primary funding round)
+
+Other rules:
 - The company must be European (EU + UK + Switzerland + Norway + Iceland). Return "null" if it's not European.
 - Convert USD/GBP amounts to EUR roughly (USD*0.92, GBP*1.17).
 - Return ONLY the JSON object or the literal "null". No prose, no markdown fences.
 """
+
+# Defensive: if the model returns a stage outside the allowed set, normalize or drop.
+VALID_STAGES = {
+    "Seed", "Series A", "Series B", "Series C", "Series D",
+    "Series E", "Series F", "Series G", "Series H", "Series I", "Series J",
+    "Series E+", "IPO", "Growth",
+}
+
+STAGE_REMAP = {
+    "Pre-Seed": "Seed",
+    "Pre Seed": "Seed",
+    "Preseed": "Seed",
+    "Late Stage": "Growth",
+    "Growth Equity": "Growth",
+    "PE": "Growth",
+    "Private Equity": "Growth",
+}
+
+
+def normalize_stage(stage):
+    """Return a stage value the DB will accept, or None to drop the deal."""
+    if not stage:
+        return None
+    s = stage.strip()
+    if s in VALID_STAGES:
+        return s
+    if s in STAGE_REMAP:
+        return STAGE_REMAP[s]
+    return None  # Drop deals that don't map cleanly (debt, grant, acquisition, etc.)
 
 
 def extract_deal(title, text, url):
@@ -275,16 +323,21 @@ def main():
     sitemaps = fetch_sitemap_index()
     print(f"      Found {len(sitemaps)} post sitemaps.")
 
-    # Step 3: pull all URLs, filter by funding slug, skip existing
-    print("\n[3/5] Walking sitemaps and filtering by funding slug…")
+    # Step 3: pull all URLs, filter by funding slug + lastmod >= MIN_YEAR, skip existing
+    print(f"\n[3/5] Walking sitemaps; keeping funding-slug URLs with lastmod >= {MIN_YEAR}…")
     candidates = []
+    min_date_str = f"{MIN_YEAR}-01-01"
     for i, sm in enumerate(sitemaps, 1):
         urls = fetch_sitemap_urls(sm)
         kept_before = len(candidates)
-        for url, _ in urls:
+        for url, lastmod in urls:
             if url in existing_urls:
                 continue
             if not looks_like_funding(url):
+                continue
+            # Skip if lastmod indicates pre-MIN_YEAR. lastmod can only go forward
+            # in time, so lastmod < cutoff guarantees publish < cutoff.
+            if lastmod and lastmod[:10] < min_date_str:
                 continue
             candidates.append(url)
         print(f"      [{i}/{len(sitemaps)}] {sm.rsplit('/', 1)[-1]}: {len(urls)} urls, "
@@ -332,6 +385,13 @@ def main():
             skipped_not_funding += 1
             continue
 
+        # Normalize stage to one of the values the DB CHECK constraint allows.
+        normalized_stage = normalize_stage(deal.get("stage"))
+        if not normalized_stage:
+            skipped_not_funding += 1
+            continue
+        deal["stage"] = normalized_stage
+
         deal.update({
             "year": year,
             "quarter": quarter,
@@ -346,22 +406,33 @@ def main():
         if len(batch) >= 25:
             try:
                 supabase_upsert("deals", batch)
-                print(f"      ↳ Flushed batch of {len(batch)} deals.")
+                print(f"      >>> Flushed batch of {len(batch)} deals.")
                 batch = []
             except Exception as e:
-                print(f"      ↳ Batch upsert failed: {e}")
+                print(f"      !!! Batch upsert failed: {e}")
+                # Try one-by-one so a single bad row doesn't kill the whole batch
+                for row in batch:
+                    try:
+                        supabase_upsert("deals", [row])
+                    except Exception as inner:
+                        print(f"          row failed: {row.get('company')} y{row.get('year')}q{row.get('quarter')}: {str(inner)[:120]}")
                 batch = []
 
-        # Light rate limit
-        time.sleep(0.2)
+        # Light rate limit (Silicon Canals tolerates fast scraping; keep small.)
+        time.sleep(0.05)
 
     # Final flush
     if batch:
         try:
             supabase_upsert("deals", batch)
-            print(f"      ↳ Flushed final batch of {len(batch)} deals.")
+            print(f"      >>> Flushed final batch of {len(batch)} deals.")
         except Exception as e:
-            print(f"      ↳ Final batch upsert failed: {e}")
+            print(f"      !!! Final batch upsert failed: {e}")
+            for row in batch:
+                try:
+                    supabase_upsert("deals", [row])
+                except Exception as inner:
+                    print(f"          row failed: {row.get('company')} y{row.get('year')}q{row.get('quarter')}: {str(inner)[:120]}")
 
     print(f"\n[5/5] Done.")
     print(f"      New deals added: {new_deals}")
