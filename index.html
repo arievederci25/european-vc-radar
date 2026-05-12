@@ -1228,8 +1228,10 @@ function getGlobalFiltered(){
 function applyFilters(){
   let data = [...allDeals];
 
-  // Period filter
-  if(selectedPeriods.size>0){
+  // Period filter — bypassed when the user is searching, so that typing a
+  // company name (e.g. "QuantWare") finds it across all time even if the
+  // chart is currently zoomed to a specific quarter range.
+  if(selectedPeriods.size>0 && !searchTerm){
     data=data.filter(d=>selectedPeriods.has(`${d.year}-${d.quarter}`));
   }
   // Stage (multi-select)
