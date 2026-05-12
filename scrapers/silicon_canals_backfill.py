@@ -392,6 +392,15 @@ def main():
             continue
         deal["stage"] = normalized_stage
 
+        # Standardise amount_display to a single format: "€X.YM" with trailing .0
+        # stripped (no K, no B). Whatever Claude returned is overridden so the
+        # whole table stays consistent.
+        if deal.get("amount_eur") is not None:
+            v = round(float(deal["amount_eur"]) * 10) / 10
+            deal["amount_display"] = "€" + (str(int(v)) if v == int(v) else str(v)) + "M"
+        else:
+            deal["amount_display"] = None
+
         deal.update({
             "year": year,
             "quarter": quarter,

@@ -198,6 +198,14 @@ def main():
             continue
 
         year, quarter, announced_date = parse_date(entry.get("published", ""))
+
+        # Standardise amount_display to a single "€X.YM" format (no K, no B).
+        if deal.get("amount_eur") is not None:
+            v = round(float(deal["amount_eur"]) * 10) / 10
+            deal["amount_display"] = "€" + (str(int(v)) if v == int(v) else str(v)) + "M"
+        else:
+            deal["amount_display"] = None
+
         deal.update({
             "year": year,
             "quarter": quarter,
