@@ -22,6 +22,14 @@ import requests
 from bs4 import BeautifulSoup
 import anthropic
 
+# cloudscraper bypasses Silicon Canals' Cloudflare protection.
+# Falls back to plain requests for Supabase + Anthropic calls.
+try:
+    import cloudscraper
+    sc_session = cloudscraper.create_scraper()
+except ImportError:
+    sc_session = requests
+
 SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_KEY = os.environ["SUPABASE_KEY"]
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
@@ -110,7 +118,7 @@ def get_all_existing_source_urls():
 
 def fetch_sitemap_index():
     """Return list of post-sitemap URLs from the sitemap index."""
-    r = requests.get(SITEMAP_INDEX, headers=HEADERS, timeout=30)
+    r = sc_session.get(SITEMAP_INDEX, headers=HEADERS, timeout=30)
     r.raise_for_status()
     root = ET.fromstring(r.content)
     ns = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
@@ -123,7 +131,7 @@ def fetch_sitemap_index():
 def fetch_sitemap_urls(sitemap_url):
     """Return list of (url, lastmod) tuples from a single sitemap."""
     try:
-        r = requests.get(sitemap_url, headers=HEADERS, timeout=30)
+        r = sc_session.get(sitemap_url, headers=HEADERS, timeout=30)
         r.raise_for_status()
         root = ET.fromstring(r.content)
         ns = {"s": "http://www.sitemaps.org/schemas/sitemap/0.9"}
@@ -157,7 +165,7 @@ def looks_like_funding(url):
 def fetch_article(url):
     """Fetch article HTML and return (text, published_date_iso, title)."""
     try:
-        r = requests.get(url, headers=HEADERS, timeout=20)
+        r = sc_session.get(url, headers=HEADERS, timeout=20)
         r.raise_for_status()
     except Exception as e:
         print(f"  Fetch failed: {e}")
