@@ -1099,9 +1099,12 @@ async function loadAllDeals(){
 // -- INIT ---------------------------------------------------------------------
 async function init(){
   getChartDefaults();
-  document.getElementById('lastUpdated').textContent = 'Updated May 12, 2026 (3,714 deals, \u20AC228B)';
+  document.getElementById('lastUpdated').textContent = 'Updated May 12, 2026 (3,570 deals, \u20AC228B)';
 
-  allDeals = await loadAllDeals();
+  // Apply site inclusion policy at the visibility boundary: hide rows that
+  // pre-date the scraper enforcement and have no confirmed amount. Documented
+  // in the site footer ("Undisclosed-amount rounds are excluded").
+  allDeals = (await loadAllDeals()).filter(d => d.amount_eur != null && Number(d.amount_eur) >= 0.5);
   buildYearOverview();
   buildQuarterGrid();
   buildAvgStagePills();
