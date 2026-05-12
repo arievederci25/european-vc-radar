@@ -1036,7 +1036,13 @@ let sortDir = -1;
 let charts = {};
 
 // -- HELPERS ------------------------------------------------------------------
-const fmt  = n=> n==null?'\u2014':n>=1000?'\u20AC'+(n/1000).toFixed(1)+'B':'\u20AC'+Number(n).toFixed(1)+'M';
+// Consistent single-format amount string: always \u20ACX.YM (no K, no B), trailing .0 stripped.
+const fmt = n => {
+  if (n == null) return '\u2014';
+  const v = Math.round(Number(n) * 10) / 10;
+  // toString() naturally drops trailing zeros: 5.0 -> "5", 5.5 -> "5.5", 1500.0 -> "1500"
+  return '\u20AC' + v.toString() + 'M';
+};
 const fmtB = n=> n==null?'\u2014': n>=1000 ? '\u20AC'+(n/1000).toFixed(1)+'B' : '\u20AC'+n.toFixed(1)+'M';
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 
