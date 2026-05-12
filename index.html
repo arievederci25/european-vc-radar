@@ -98,9 +98,10 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://swhjffkhhwktrvwiqmoe.supabase.co" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-<!-- flag-icons: SVG country flags. Renders consistently on every OS (incl. Windows
-     where unicode flag emojis fall back to letter pairs like "NL"/"EE"). -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.5.0/css/flag-icons.min.css">
+<!-- flag-icons: SVG country flags. Loaded async via the preload-as-style trick
+     so it doesn't block first paint (it's only needed once the deal table renders). -->
+<link rel="preload" as="style" href="https://cdn.jsdelivr.net/npm/flag-icons@7.5.0/css/flag-icons.min.css" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons@7.5.0/css/flag-icons.min.css"></noscript>
 <link rel="preload" href="/data/deals.json" as="fetch" type="application/json" crossorigin>
 <script>
 // Single CDN request to a pre-computed static deals snapshot. GitHub Pages
@@ -774,7 +775,7 @@ footer{
           </div>
           <div class="qs-filter-row">
             <span class="qs-filter-label">Country</span>
-            <select class="country-select" id="countrySelect">
+            <select class="country-select" id="countrySelect" aria-label="Filter deals by country">
               <option value="">All Countries</option>
             </select>
           </div>
@@ -938,8 +939,10 @@ footer{
   </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha256-IGtui7APx7uix+6AykHbPp4FunvgqjWr66nP1TV/XQ4=" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js" integrity="sha256-/anWf4DM5AdPeNY3O7E26Ew0yyNbipHF5ChAaNpt3EI=" crossorigin="anonymous"></script>
+<!-- Defer external scripts so HTML parsing isn't blocked. They still execute in
+     declaration order; init() is wrapped in DOMContentLoaded below to wait for them. -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha256-IGtui7APx7uix+6AykHbPp4FunvgqjWr66nP1TV/XQ4=" crossorigin="anonymous" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js" integrity="sha256-/anWf4DM5AdPeNY3O7E26Ew0yyNbipHF5ChAaNpt3EI=" crossorigin="anonymous" defer></script>
 <script>
 // -- ANALYTICS (cookieless, no personal data) --------------------------------
 (function(){
@@ -957,7 +960,8 @@ footer{
 // -- CONFIG ------------------------------------------------------------------
 const SUPABASE_URL  = 'https://swhjffkhhwktrvwiqmoe.supabase.co';
 const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3aGpmZmtoaHdrdHJ2d2lxbW9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTY5NDYsImV4cCI6MjA5MDc5Mjk0Nn0.XjNLCy3Fahc9AlitTpLWMQFRFC8HXh3OVT5iaIeFrNE';
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Created inside init() after the deferred supabase-js bundle has executed.
+let db = null;
 
 const SECTOR_COLORS = ['#e87461','#d4604e','#c94e3a','#f0a090','#f5c5bc','#8b3a2f',
   '#2d7dd2','#1a5fa8','#3da5d9','#6cbce8','#a8d8f0','#d0edf8',
@@ -1020,7 +1024,7 @@ const COUNTRY_ISO = {
 function countryFlag(country){
   if(!country) return '🏢';
   const iso = COUNTRY_ISO[country] || COUNTRY_ISO[country.toUpperCase()];
-  return iso ? `<span class="fi fi-${iso}" aria-label="${esc(country)} flag"></span>` : '🏢';
+  return iso ? `<span class="fi fi-${iso}" role="img" aria-label="${esc(country)} flag"></span>` : '🏢';
 }
 
 // -- STATE --------------------------------------------------------------------
@@ -1098,6 +1102,8 @@ async function loadAllDeals(){
 
 // -- INIT ---------------------------------------------------------------------
 async function init(){
+  // Create the Supabase client now that the deferred supabase-js bundle has executed.
+  db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   getChartDefaults();
   document.getElementById('lastUpdated').textContent = 'Updated May 12, 2026 (3,570 deals, \u20AC228B)';
 
@@ -1699,7 +1705,13 @@ function bindEvents(){
 }
 
 // -- START ----------------------------------------------------------------------
-init().catch(console.error);
+// Wait for deferred bundles (chart.js + supabase-js) before running init().
+// Deferred scripts execute after this inline script but before DOMContentLoaded.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => init().catch(console.error));
+} else {
+  init().catch(console.error);
+}
 </script>
 </body>
 </html>
