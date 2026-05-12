@@ -1353,14 +1353,64 @@ function buildSectorFilters(){
 }
 
 // -- CHARTS ---------------------------------------------------------------------
+// Track in-flight chart-render scheduling so a fresh applyFilters() call
+// cancels any unfinished one (avoids racing renders on rapid filter clicks).
+let _chartRenderToken = 0;
+
 function renderCharts(){
-  renderSectorChart();
-  renderStageChart();
-  renderTimelineChart();
-  renderCountryChart();
-  renderSizeChart();
-  renderAvgStageChart();
-  renderVelocityChart();
+  // Each new Chart() costs 50-150ms. Doing all seven in one sync task pushes
+  // Total Blocking Time over 500ms. Spread them across animation frames so
+  // each render finishes in its own task and the browser can paint between.
+  // We also use IntersectionObserver to skip below-the-fold charts on the
+  // first pass — they'll render when scrolled into view.
+  const token = ++_chartRenderToken;
+  const tasks = [
+    // Above-the-fold first (rendered immediately) — these are seen at first paint.
+    {fn: renderSectorChart,   id: 'sectorChart',   priority: 0},
+    {fn: renderStageChart,    id: 'stageChart',    priority: 0},
+    // Below-the-fold (lazy) — rendered when scrolled into view.
+    {fn: renderTimelineChart, id: 'timelineChart', priority: 1},
+    {fn: renderCountryChart,  id: 'countryChart',  priority: 1},
+    {fn: renderSizeChart,     id: 'sizeChart',     priority: 1},
+    {fn: renderAvgStageChart, id: 'avgStageChart', priority: 1},
+    {fn: renderVelocityChart, id: 'velocityChart', priority: 1},
+  ];
+
+  const inViewport = el => {
+    const r = el.getBoundingClientRect();
+    return r.top < (window.innerHeight || 0) && r.bottom > 0;
+  };
+
+  (async () => {
+    for (const t of tasks) {
+      if (token !== _chartRenderToken) return; // a newer filter pass took over
+      const el = document.getElementById(t.id);
+      // Render high-priority charts always; defer below-fold ones until visible.
+      if (t.priority === 0 || (el && inViewport(el))) {
+        t.fn();
+        await new Promise(r => requestAnimationFrame(r));
+      } else if (el) {
+        scheduleLazyChartRender(el, t.fn, token);
+      }
+    }
+  })();
+}
+
+// Renders a chart the first time its canvas scrolls into view.
+const _lazyRenderObservers = new WeakMap();
+function scheduleLazyChartRender(el, fn, token){
+  // Drop any previous observer for this element (avoid duplicate renders).
+  const prev = _lazyRenderObservers.get(el);
+  if (prev) prev.disconnect();
+  const observer = new IntersectionObserver(entries => {
+    if (entries.some(e => e.isIntersecting) && token === _chartRenderToken) {
+      observer.disconnect();
+      _lazyRenderObservers.delete(el);
+      fn();
+    }
+  }, {rootMargin: '200px'});
+  observer.observe(el);
+  _lazyRenderObservers.set(el, observer);
 }
 
 // Independent period selection for avg stage chart
