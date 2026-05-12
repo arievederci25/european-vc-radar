@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' fonts.googleapis.com 'unsafe-inline'; font-src fonts.gstatic.com; connect-src https://swhjffkhhwktrvwiqmoe.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' cdn.jsdelivr.net 'unsafe-inline'; style-src 'self' fonts.googleapis.com 'unsafe-inline'; font-src fonts.gstatic.com; connect-src 'self' https://swhjffkhhwktrvwiqmoe.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'self'">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta http-equiv="Permissions-Policy" content="geolocation=(), camera=(), microphone=()">
@@ -98,22 +98,36 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://swhjffkhhwktrvwiqmoe.supabase.co" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preload" href="/data/deals.json" as="fetch" type="application/json" crossorigin>
 <script>
-// Kick off deal fetching IMMEDIATELY, in parallel with downloading the chart.js
-// and supabase-js bundles at the bottom of the page. By the time those scripts
-// finish loading, the data is usually already here. Trims ~300-600ms off the
-// time-to-interactive on cold loads.
+// Single CDN request to a pre-computed static deals snapshot. GitHub Pages
+// serves this gzipped from Fastly edge, so it lands in ~50-100ms on most
+// connections — much faster than 4 parallel Supabase round trips to
+// eu-central-1. The file is regenerated on every scraper run.
+//
+// If the static file is missing (e.g. between scraper runs, or a stale cache)
+// or fails to parse, we transparently fall back to Supabase REST.
 (function(){
-  const SB = 'https://swhjffkhhwktrvwiqmoe.supabase.co';
-  const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3aGpmZmtoaHdrdHJ2d2lxbW9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTY5NDYsImV4cCI6MjA5MDc5Mjk0Nn0.XjNLCy3Fahc9AlitTpLWMQFRFC8HXh3OVT5iaIeFrNE';
-  const COLS = 'year,quarter,company,country,flag,stage,amount_eur,amount_display,sector,lead_investor,description';
-  const PAGE = 1000;
-  const MAX_PAGES = 8;
-  const headers = {apikey: KEY, Authorization: 'Bearer ' + KEY};
-  const url = i => `${SB}/rest/v1/deals?select=${COLS}&order=year.asc,quarter.asc,amount_eur.desc.nullslast&offset=${i*PAGE}&limit=${PAGE}`;
-  window.__dealsPromise = Promise.all(
-    Array.from({length: MAX_PAGES}, (_, i) => fetch(url(i), {headers}).then(r => r.ok ? r.json() : []))
-  ).then(pages => pages.flat());
+  function viaSupabase(){
+    const SB = 'https://swhjffkhhwktrvwiqmoe.supabase.co';
+    const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3aGpmZmtoaHdrdHJ2d2lxbW9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMTY5NDYsImV4cCI6MjA5MDc5Mjk0Nn0.XjNLCy3Fahc9AlitTpLWMQFRFC8HXh3OVT5iaIeFrNE';
+    const COLS = 'year,quarter,company,country,flag,stage,amount_eur,amount_display,sector,lead_investor,description';
+    const PAGE = 1000;
+    const MAX_PAGES = 8;
+    const headers = {apikey: KEY, Authorization: 'Bearer ' + KEY};
+    const url = i => `${SB}/rest/v1/deals?select=${COLS}&order=year.asc,quarter.asc,amount_eur.desc.nullslast&offset=${i*PAGE}&limit=${PAGE}`;
+    return Promise.all(
+      Array.from({length: MAX_PAGES}, (_, i) => fetch(url(i), {headers}).then(r => r.ok ? r.json() : []))
+    ).then(pages => pages.flat());
+  }
+
+  window.__dealsPromise = fetch('/data/deals.json', {cache: 'force-cache'})
+    .then(r => {
+      if (!r.ok) throw new Error('static deals.json missing: ' + r.status);
+      return r.json();
+    })
+    .then(data => Array.isArray(data) && data.length ? data : viaSupabase())
+    .catch(() => viaSupabase());
 })();
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
