@@ -310,8 +310,8 @@ def already_tracked(url):
             f"source_urls=cs.%5B%22{requests.utils.quote(url)}%22%5D&select=id",
         )
         return len(rows) > 0
-        except Exception:
-            return False
+    except Exception:
+        return False
 
 
 FUNDING_KEYWORDS = [
