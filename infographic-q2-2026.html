@@ -60,7 +60,7 @@
   .stat-value { font-size: 38px; font-weight: 800; letter-spacing: -1.5px; line-height: 1; margin-bottom: 6px; }
   .stat-label { font-size: 12px; font-weight: 600; opacity: 0.7; letter-spacing: 0.5px; text-transform: uppercase; }
 
-  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1.5fr 1.5fr; gap: 16px; margin-bottom: 16px; }
   .panel { background: #fff; border-radius: 20px; padding: 22px; border: 1px solid rgba(26,24,5,0.07); }
   .panel.span2 { grid-column: span 2; }
   .panel-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #aaa090; margin-bottom: 14px; }
@@ -365,6 +365,16 @@ async function generatePDF() {
   btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download als PDF';
   btn.classList.remove('loading');
   btn.disabled = false;
+}
+function generatePNG() {
+  const btn = document.getElementById('pngBtn');
+  btn.textContent = 'Bezig…'; btn.disabled = true;
+  html2canvas(document.getElementById('infographic'), { scale: 2, useCORS: true, backgroundColor: '#faf8f4', logging: false })
+    .then(canvas => {
+      const a = document.createElement('a');
+      a.download = 'vcradar-q2-2026.png'; a.href = canvas.toDataURL('image/png'); a.click();
+      btn.textContent = 'Opslaan als PNG (LinkedIn)'; btn.disabled = false;
+    });
 }
 </script>
 </body>
