@@ -3,8 +3,10 @@ Silicon Canals funding round scraper.
 
 Discovery strategy (tries each in order until entries are found):
   1. Silicon Canals RSS feed directly
-  2. Google News RSS search for site:siliconcanals.com (bypasses IP block)
-  3. Silicon Canals funding page scrape (direct fallback)
+  2. rss2json.com proxy (fetches SC feed via their servers, bypasses IP block)
+  3. Feedly public API (another RSS proxy)
+  4. Google News RSS search for "silicon canals"
+  5. Silicon Canals funding page scrape (last resort)
 
 For each discovered article, tries to fetch article body text.
 If the article page is also blocked, falls back to title-only extraction.
@@ -24,11 +26,10 @@ ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 
 FEED_URL = "https://siliconcanals.com/feed/"
 FALLBACK_URL = "https://siliconcanals.com/news/startups/funding/"
-GOOGLE_NEWS_URL = (
-    "https://news.google.com/rss/search"
-    "?q=site%3Asiliconcanals.com+funding+raises+million"
-    "&hl=en&gl=NL&ceid=NL:en"
-)
+RSS2JSON_URL = "https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fsiliconcanals.com%2Ffeed%2F&count=40"
+FEEDLY_URL = "https://cloud.feedly.com/v3/streams/contents?streamId=feed%2Fhttps%3A%2F%2Fsiliconcanals.com%2Ffeed%2F&count=40"
+GOOGLE_NEWS_URL = "https://news.google.com/rss/search?q=%22silicon+canals%22+funding&hl=en&gl=US&ceid=US:en"
+
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -63,25 +64,12 @@ def supabase_upsert(table, rows):
     r.raise_for_status()
 
 
-def resolve_url(url, timeout=10):
-    """Follow redirects to get the final URL (useful for Google News links)."""
-    try:
-        r = requests.head(url, headers=HEADERS, timeout=timeout, allow_redirects=True)
-        return r.url
-    except Exception:
-        try:
-            r = requests.get(url, headers=HEADERS, timeout=timeout, allow_redirects=True, stream=True)
-            return r.url
-        except Exception:
-            return url
-
-
 def fetch_article_text(url):
     """Fetch and clean article body text. Returns empty string if blocked."""
     try:
         r = requests.get(url, headers=HEADERS, timeout=20)
         if r.status_code == 403:
-            print(f"  Article page blocked (403) - will use title-only extraction")
+            print(f"  Article page blocked (403) - using title-only extraction")
             return ""
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "html.parser")
@@ -112,8 +100,59 @@ def try_silicon_canals_rss():
     return []
 
 
+def try_rss2json_proxy():
+    """Fetch Silicon Canals feed via rss2json.com proxy (bypasses IP block)."""
+    try:
+        r = requests.get(RSS2JSON_URL, headers=HEADERS, timeout=20)
+        if r.status_code != 200:
+            print(f"rss2json returned {r.status_code}")
+            return []
+        data = r.json()
+        if data.get("status") != "ok":
+            print(f"rss2json status: {data.get('status')} - {data.get('message','')}")
+            return []
+        items = data.get("items", [])
+        if not items:
+            print("rss2json: no items")
+            return []
+        print(f"rss2json proxy OK - {len(items)} items")
+        return [
+            {"url": item.get("link", ""), "title": item.get("title", ""), "published": item.get("pubDate", "")}
+            for item in items
+        ]
+    except Exception as e:
+        print(f"rss2json proxy failed: {e}")
+    return []
+
+
+def try_feedly_proxy():
+    """Fetch Silicon Canals feed via Feedly public API (bypasses IP block)."""
+    try:
+        r = requests.get(FEEDLY_URL, headers=HEADERS, timeout=20)
+        if r.status_code != 200:
+            print(f"Feedly returned {r.status_code}")
+            return []
+        data = r.json()
+        items = data.get("items", [])
+        if not items:
+            print("Feedly: no items")
+            return []
+        print(f"Feedly proxy OK - {len(items)} items")
+        entries = []
+        for item in items:
+            url = item.get("originId", "") or item.get("canonical", [{}])[0].get("href", "")
+            title = item.get("title", "")
+            pub_ms = item.get("published", 0)
+            pub_str = datetime.fromtimestamp(pub_ms / 1000, tz=timezone.utc).strftime("%a, %d %b %Y %H:%M:%S +0000") if pub_ms else ""
+            entries.append({"url": url, "title": title, "published": pub_str})
+        return entries
+    except Exception as e:
+        print(f"Feedly proxy failed: {e}")
+    return []
+
+
 def try_google_news_rss():
-    """Search Google News for Silicon Canals funding articles (bypasses IP block)."""
+    """Search Google News for Silicon Canals funding articles."""
     try:
         r = requests.get(GOOGLE_NEWS_URL, headers=HEADERS, timeout=15)
         if r.status_code != 200:
@@ -123,33 +162,18 @@ def try_google_news_rss():
         if not feed.entries:
             print("Google News RSS: no entries")
             return []
-
         entries = []
-        seen_urls = set()
+        seen = set()
         for e in feed.entries:
             raw_title = e.get("title", "")
-            raw_link = e.get("link", "")
+            link = e.get("link", "")
             pub = e.get("published", "")
-
-            # Filter to Silicon Canals articles only
-            source = e.get("source", {}).get("title", "") or ""
-            if "silicon canals" not in raw_title.lower() and "silicon canals" not in source.lower():
-                continue
-
-            # Strip " - Silicon Canals" suffix from title
-            title = re.sub(r"\s*[-|]\s*Silicon Canals.*$", "", raw_title, flags=re.IGNORECASE).strip()
-
-            # Resolve Google redirect to get actual article URL
-            print(f"  Resolving: {title[:60]}")
-            real_url = resolve_url(raw_link)
-            if "siliconcanals.com" not in real_url:
-                real_url = raw_link
-
-            if real_url not in seen_urls:
-                seen_urls.add(real_url)
-                entries.append({"url": real_url, "title": title, "published": pub})
-
-        print(f"Google News: found {len(entries)} Silicon Canals articles")
+            # Strip source name suffix (e.g. " - Silicon Canals")
+            title = re.sub(r"\s*[-|]\s*[\w\s]+$", "", raw_title).strip() or raw_title
+            if link not in seen:
+                seen.add(link)
+                entries.append({"url": link, "title": title, "published": pub})
+        print(f"Google News: {len(entries)} entries")
         return entries[:40]
     except Exception as e:
         print(f"Google News RSS failed: {e}")
@@ -157,7 +181,7 @@ def try_google_news_rss():
 
 
 def try_direct_page_scrape():
-    """Scrape the Silicon Canals funding page directly (may be blocked)."""
+    """Scrape the Silicon Canals funding page directly (likely blocked)."""
     try:
         r = requests.get(FALLBACK_URL, headers=HEADERS, timeout=20)
         r.raise_for_status()
@@ -181,7 +205,7 @@ def try_direct_page_scrape():
                 if href not in seen:
                     seen.add(href)
                     entries.append({"url": href, "title": title, "published": ""})
-        print(f"Direct page scrape: found {len(entries)} articles")
+        print(f"Direct page scrape: {len(entries)} articles")
         return entries[:40]
     except Exception as e:
         print(f"Direct page scrape failed: {e}")
@@ -194,7 +218,17 @@ def get_feed_entries():
     if entries:
         return entries
 
-    print("Trying Google News RSS fallback...")
+    print("Trying rss2json proxy...")
+    entries = try_rss2json_proxy()
+    if entries:
+        return entries
+
+    print("Trying Feedly proxy...")
+    entries = try_feedly_proxy()
+    if entries:
+        return entries
+
+    print("Trying Google News RSS...")
     entries = try_google_news_rss()
     if entries:
         return entries
@@ -204,7 +238,11 @@ def get_feed_entries():
 
 
 def extract_deal(title, text, url, pub_date):
-    text_section = f"Article text (first 4000 chars):\n{text}" if text else "(Article body unavailable - extract from title only)"
+    text_section = (
+        f"Article text (first 4000 chars):\n{text}"
+        if text
+        else "(Article body unavailable - extract from title only)"
+    )
     prompt = f"""You are extracting structured data from a startup funding article.
 
 Article title: {title}
@@ -233,8 +271,8 @@ Only return valid JSON, nothing else. If this article is NOT about a European fu
             messages=[{"role": "user", "content": prompt}],
         )
         raw = msg.content[0].text.strip()
-        raw = re.sub(r'^```json\s*', '', raw)
-        raw = re.sub(r'\s*```$', '', raw)
+        raw = re.sub(r"^```json\s*", "", raw)
+        raw = re.sub(r"\s*```$", "", raw)
         if raw.lower() == "null":
             return None
         return json.loads(raw)
@@ -244,91 +282,32 @@ Only return valid JSON, nothing else. If this article is NOT about a European fu
 
 
 def parse_date(pub_date_str):
+    if not pub_date_str:
+        now = datetime.now(timezone.utc)
+        return now.year, (now.month - 1) // 3 + 1, now.strftime("%Y-%m-%d")
+    # Try RFC 2822 format (RSS feeds)
     try:
         import email.utils
         t = email.utils.parsedate_to_datetime(pub_date_str)
-        year = t.year
-        month = t.month
-        quarter = (month - 1) // 3 + 1
-        announced_date = t.strftime("%Y-%m-%d")
-        return year, quarter, announced_date
+        return t.year, (t.month - 1) // 3 + 1, t.strftime("%Y-%m-%d")
     except Exception:
-        now = datetime.now(timezone.utc)
-        return now.year, (now.month - 1) // 3 + 1, now.strftime("%Y-%m-%d")
+        pass
+    # Try ISO format (rss2json, Feedly)
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S%z"):
+        try:
+            t = datetime.strptime(pub_date_str[:19], fmt[:len(pub_date_str[:19])])
+            return t.year, (t.month - 1) // 3 + 1, t.strftime("%Y-%m-%d")
+        except Exception:
+            pass
+    now = datetime.now(timezone.utc)
+    return now.year, (now.month - 1) // 3 + 1, now.strftime("%Y-%m-%d")
 
 
 def already_tracked(url):
     try:
         rows = supabase_get(
             "deals",
-            f"source_urls=cs.%5B%22{requests.utils.quote(url)}%22%5D&select=id"
+            f"source_urls=cs.%5B%22{requests.utils.quote(url)}%22%5D&select=id",
         )
         return len(rows) > 0
-    except Exception:
-        return False
-
-
-FUNDING_KEYWORDS = [
-    "secures", "raises", "funding", "million", "invest",
-    "round", "capital", "seed", "series", "backed", "closes"
-]
-
-
-def main():
-    print("Fetching Silicon Canals articles...")
-    entries = get_feed_entries()
-
-    if not entries:
-        print("No articles found from any source - exiting.")
-        sys.exit(0)
-
-    new_deals = 0
-    skipped = 0
-
-    for entry in entries:
-        url = entry["url"]
-        title = entry["title"]
-
-        if not any(k in title.lower() for k in FUNDING_KEYWORDS):
-            skipped += 1
-            continue
-
-        if already_tracked(url):
-            print(f"  Already tracked: {title[:60]}")
-            skipped += 1
-            continue
-
-        print(f"Processing: {title[:70]}")
-        text = fetch_article_text(url)
-        deal = extract_deal(title, text, url, entry.get("published", ""))
-
-        if not deal:
-            print(f"  Not a funding round, skipping")
-            skipped += 1
-            continue
-
-        if deal.get("amount_eur") is not None and deal["amount_eur"] < 0.5:
-            print(f"  Below 500k threshold, skipping")
-            skipped += 1
-            continue
-
-        year, quarter, announced_date = parse_date(entry.get("published", ""))
-        deal.update({
-            "year": year,
-            "quarter": quarter,
-            "announced_date": announced_date,
-            "source_urls": [url],
-        })
-
-        print(f"  -> {deal.get('company')} | {deal.get('amount_display')} | {deal.get('stage')} | {deal.get('country')}")
-        try:
-            supabase_upsert("deals", [deal])
-            new_deals += 1
-        except Exception as e:
-            print(f"  Supabase upsert failed: {e}")
-
-    print(f"\nDone. New deals added: {new_deals}, skipped: {skipped}")
-
-
-if __name__ == "__main__":
-    main()
+  
