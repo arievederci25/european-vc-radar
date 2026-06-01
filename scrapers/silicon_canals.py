@@ -1,9 +1,14 @@
 """
 Silicon Canals funding round scraper.
-Fetches the RSS feed, extracts new articles, uses Claude to parse deal data,
-and upserts into Supabase. Skips articles already in the DB by source_url.
 
-Fallback: if RSS feed is blocked (403/timeout), scrapes the news page directly.
+Discovery strategy (tries each in order until entries are found):
+  1. Silicon Canals RSS feed directly
+  2. Google News RSS search for site:siliconcanals.com (bypasses IP block)
+  3. Silicon Canals funding page scrape (direct fallback)
+
+For each discovered article, tries to fetch article body text.
+If the article page is also blocked, falls back to title-only extraction.
+Upserts qualifying deals (>= EUR 0.5M, European) into Supabase.
 """
 
 import os, sys, json, re
@@ -19,6 +24,11 @@ ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 
 FEED_URL = "https://siliconcanals.com/feed/"
 FALLBACK_URL = "https://siliconcanals.com/news/startups/funding/"
+GOOGLE_NEWS_URL = (
+    "https://news.google.com/rss/search"
+    "?q=site%3Asiliconcanals.com+funding+raises+million"
+    "&hl=en&gl=NL&ceid=NL:en"
+)
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
@@ -53,9 +63,26 @@ def supabase_upsert(table, rows):
     r.raise_for_status()
 
 
+def resolve_url(url, timeout=10):
+    """Follow redirects to get the final URL (useful for Google News links)."""
+    try:
+        r = requests.head(url, headers=HEADERS, timeout=timeout, allow_redirects=True)
+        return r.url
+    except Exception:
+        try:
+            r = requests.get(url, headers=HEADERS, timeout=timeout, allow_redirects=True, stream=True)
+            return r.url
+        except Exception:
+            return url
+
+
 def fetch_article_text(url):
+    """Fetch and clean article body text. Returns empty string if blocked."""
     try:
         r = requests.get(url, headers=HEADERS, timeout=20)
+        if r.status_code == 403:
+            print(f"  Article page blocked (403) - will use title-only extraction")
+            return ""
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "html.parser")
         for tag in soup(["nav", "footer", "aside", "script", "style"]):
@@ -67,35 +94,82 @@ def fetch_article_text(url):
         return ""
 
 
-def get_feed_entries():
-    """Try RSS feed first, fall back to scraping the news page."""
-    # Try RSS
+def try_silicon_canals_rss():
+    """Try the Silicon Canals RSS feed directly."""
     try:
         r = requests.get(FEED_URL, headers=HEADERS, timeout=15)
         if r.status_code == 200 and "<rss" in r.text[:500]:
             feed = feedparser.parse(r.text)
             if feed.entries:
-                print(f"RSS feed OK â {len(feed.entries)} entries")
+                print(f"Silicon Canals RSS OK - {len(feed.entries)} entries")
                 return [
                     {"url": e.get("link", ""), "title": e.get("title", ""), "published": e.get("published", "")}
                     for e in feed.entries
                 ]
-        print(f"RSS returned {r.status_code}, trying fallback page scrapeâ¦")
+        print(f"Silicon Canals RSS returned {r.status_code}")
     except Exception as e:
-        print(f"RSS fetch failed ({e}), trying fallback page scrapeâ¦")
+        print(f"Silicon Canals RSS failed: {e}")
+    return []
 
-    # Fallback: scrape the funding news page for article links
+
+def try_google_news_rss():
+    """Search Google News for Silicon Canals funding articles (bypasses IP block)."""
+    try:
+        r = requests.get(GOOGLE_NEWS_URL, headers=HEADERS, timeout=15)
+        if r.status_code != 200:
+            print(f"Google News RSS returned {r.status_code}")
+            return []
+        feed = feedparser.parse(r.text)
+        if not feed.entries:
+            print("Google News RSS: no entries")
+            return []
+
+        entries = []
+        seen_urls = set()
+        for e in feed.entries:
+            raw_title = e.get("title", "")
+            raw_link = e.get("link", "")
+            pub = e.get("published", "")
+
+            # Filter to Silicon Canals articles only
+            source = e.get("source", {}).get("title", "") or ""
+            if "silicon canals" not in raw_title.lower() and "silicon canals" not in source.lower():
+                continue
+
+            # Strip " - Silicon Canals" suffix from title
+            title = re.sub(r"\s*[-|]\s*Silicon Canals.*$", "", raw_title, flags=re.IGNORECASE).strip()
+
+            # Resolve Google redirect to get actual article URL
+            print(f"  Resolving: {title[:60]}")
+            real_url = resolve_url(raw_link)
+            if "siliconcanals.com" not in real_url:
+                real_url = raw_link
+
+            if real_url not in seen_urls:
+                seen_urls.add(real_url)
+                entries.append({"url": real_url, "title": title, "published": pub})
+
+        print(f"Google News: found {len(entries)} Silicon Canals articles")
+        return entries[:40]
+    except Exception as e:
+        print(f"Google News RSS failed: {e}")
+    return []
+
+
+def try_direct_page_scrape():
+    """Scrape the Silicon Canals funding page directly (may be blocked)."""
     try:
         r = requests.get(FALLBACK_URL, headers=HEADERS, timeout=20)
         r.raise_for_status()
         soup = BeautifulSoup(r.text, "html.parser")
         entries = []
+        seen = set()
         for a in soup.select("a[href*='siliconcanals.com']"):
             href = a["href"]
             title = a.get_text(strip=True)
-            if len(title) > 20 and href not in [e["url"] for e in entries]:
+            if len(title) > 20 and href not in seen:
+                seen.add(href)
                 entries.append({"url": href, "title": title, "published": ""})
-        # Also look for article cards
         for card in soup.select("article, .post, .entry"):
             link = card.find("a", href=True)
             heading = card.find(["h2", "h3", "h4"])
@@ -104,22 +178,38 @@ def get_feed_entries():
                 if not href.startswith("http"):
                     href = "https://siliconcanals.com" + href
                 title = heading.get_text(strip=True)
-                if href not in [e["url"] for e in entries]:
+                if href not in seen:
+                    seen.add(href)
                     entries.append({"url": href, "title": title, "published": ""})
-        print(f"Fallback scrape: found {len(entries)} article links")
-        return entries[:40]  # cap at 40 to avoid rate limits
+        print(f"Direct page scrape: found {len(entries)} articles")
+        return entries[:40]
     except Exception as e:
-        print(f"Fallback scrape also failed: {e}")
-        return []
+        print(f"Direct page scrape failed: {e}")
+    return []
+
+
+def get_feed_entries():
+    """Try each discovery method in order until entries are found."""
+    entries = try_silicon_canals_rss()
+    if entries:
+        return entries
+
+    print("Trying Google News RSS fallback...")
+    entries = try_google_news_rss()
+    if entries:
+        return entries
+
+    print("Trying direct page scrape...")
+    return try_direct_page_scrape()
 
 
 def extract_deal(title, text, url, pub_date):
+    text_section = f"Article text (first 4000 chars):\n{text}" if text else "(Article body unavailable - extract from title only)"
     prompt = f"""You are extracting structured data from a startup funding article.
 
 Article title: {title}
 Article URL: {url}
-Article text (first 4000 chars):
-{text}
+{text_section}
 
 Extract the following fields as JSON. Use null if unknown:
 {{
@@ -128,7 +218,7 @@ Extract the following fields as JSON. Use null if unknown:
   "flag": "flag emoji for that country (string)",
   "stage": "one of: Pre-Seed, Seed, Series A, Series B, Series C, Series D, Growth, Debt, Grant, Acquisition (string)",
   "amount_eur": "deal size in EUR millions as a number, e.g. 12.5 (number or null)",
-  "amount_display": "human-readable string e.g. 'â¬12.5M' or 'â¬150M' (string or null)",
+  "amount_display": "human-readable string e.g. '12.5M' or '150M' (string or null)",
   "sector": "one of: SaaS, AI, FinTech, HealthTech, CleanTech, DeepTech, E-commerce, Mobility, PropTech, EdTech, Cybersecurity, Logistics, FoodTech, Other (string)",
   "lead_investor": "name of lead investor firm, or 'Undisclosed' (string)",
   "description": "one sentence describing what the company does (string)"
@@ -143,7 +233,6 @@ Only return valid JSON, nothing else. If this article is NOT about a European fu
             messages=[{"role": "user", "content": prompt}],
         )
         raw = msg.content[0].text.strip()
-        # Strip markdown code fences if present
         raw = re.sub(r'^```json\s*', '', raw)
         raw = re.sub(r'\s*```$', '', raw)
         if raw.lower() == "null":
@@ -186,11 +275,11 @@ FUNDING_KEYWORDS = [
 
 
 def main():
-    print("Fetching Silicon Canals articlesâ¦")
+    print("Fetching Silicon Canals articles...")
     entries = get_feed_entries()
 
     if not entries:
-        print("No articles found â exiting.")
+        print("No articles found from any source - exiting.")
         sys.exit(0)
 
     new_deals = 0
@@ -218,9 +307,8 @@ def main():
             skipped += 1
             continue
 
-        # Skip non-European or below threshold
         if deal.get("amount_eur") is not None and deal["amount_eur"] < 0.5:
-            print(f"  Below â¬500k threshold, skipping")
+            print(f"  Below 500k threshold, skipping")
             skipped += 1
             continue
 
