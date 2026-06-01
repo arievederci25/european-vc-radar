@@ -310,4 +310,71 @@ def already_tracked(url):
             f"source_urls=cs.%5B%22{requests.utils.quote(url)}%22%5D&select=id",
         )
         return len(rows) > 0
-  
+        except Exception:
+            return False
+
+
+FUNDING_KEYWORDS = [
+    "secures", "raises", "funding", "million", "invest",
+    "round", "capital", "seed", "series", "backed", "closes",
+]
+
+
+def main():
+    print("Fetching Silicon Canals articles...")
+    entries = get_feed_entries()
+
+    if not entries:
+        print("No articles found from any source - exiting.")
+        sys.exit(0)
+
+    new_deals = 0
+    skipped = 0
+
+    for entry in entries:
+        url = entry["url"]
+        title = entry["title"]
+
+        if not title or not any(k in title.lower() for k in FUNDING_KEYWORDS):
+            skipped += 1
+            continue
+
+        if already_tracked(url):
+            print(f"  Already tracked: {title[:60]}")
+            skipped += 1
+            continue
+
+        print(f"Processing: {title[:70]}")
+        text = fetch_article_text(url)
+        deal = extract_deal(title, text, url, entry.get("published", ""))
+
+        if not deal:
+            print(f"  Not a funding round, skipping")
+            skipped += 1
+            continue
+
+        if deal.get("amount_eur") is not None and deal["amount_eur"] < 0.5:
+            print(f"  Below 500k threshold, skipping")
+            skipped += 1
+            continue
+
+        year, quarter, announced_date = parse_date(entry.get("published", ""))
+        deal.update({
+            "year": year,
+            "quarter": quarter,
+            "announced_date": announced_date,
+            "source_urls": [url],
+        })
+
+        print(f"  -> {deal.get('company')} | {deal.get('amount_display')} | {deal.get('stage')} | {deal.get('country')}")
+        try:
+            supabase_upsert("deals", [deal])
+            new_deals += 1
+        except Exception as e:
+            print(f"  Supabase upsert failed: {e}")
+
+    print(f"\nDone. New deals added: {new_deals}, skipped: {skipped}")
+
+
+if __name__ == "__main__":
+    main()
