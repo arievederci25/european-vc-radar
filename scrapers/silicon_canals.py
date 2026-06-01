@@ -51,7 +51,7 @@ def supabase_get(path, params=""):
 
 def supabase_upsert(table, rows):
     r = requests.post(
-        f"{SUPABASE_URL}/rest/v1/{table}",
+        f"{SUPABASE_URL}/rest/v1/{table}?on_conflict=company,year,quarter",
         headers={
             "apikey": SUPABASE_KEY,
             "Authorization": f"Bearer {SUPABASE_KEY}",
