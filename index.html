@@ -1233,7 +1233,7 @@ function getGlobalFiltered(){
     if(stageFilters.has('other')&&!['Seed','Series A','Series B'].includes(d.stage)) return true;
     return stageFilters.has(d.stage);
   });
-  if(sectorFilters.size>0) data=data.filter(d=>sectorFilters.has(d.sector));
+  if(sectorFilters.size>0) data=data.filter(d=>sectorFilters.has(normalizeSector(d.sector)));
   if(countryFilter) data=data.filter(d=>d.country===countryFilter);
   return data;
 }
@@ -1256,7 +1256,7 @@ function applyFilters(){
     });
   }
   // Sector (multi-select)
-  if(sectorFilters.size>0) data=data.filter(d=>sectorFilters.has(d.sector));
+  if(sectorFilters.size>0) data=data.filter(d=>sectorFilters.has(normalizeSector(d.sector)));
   // Country
   if(countryFilter) data=data.filter(d=>d.country===countryFilter);
   // Search
@@ -1327,9 +1327,17 @@ function renderTable(){
     </tr>`).join('');
 }
 
-// -- SECTOR FILTERS --------------------------------------------------------------
+// -- SECTOR NORMALIZATION ------------------------------------------------------
+function normalizeSector(s){
+if(!s) return null;
+  const lc=s.toLowerCase().replace(/[\s_-]/g,'');
+    const m={agtech:'AgriTech',agritech:'AgriTech',deeptech:'DeepTech',biotech:'BioTech',cleantech:'CleanTech',edtech:'EdTech',fintech:'FinTech',foodtech:'FoodTech',healthtech:'HealthTech',insurtech:'InsurTech',legaltech:'LegalTech',proptech:'PropTech',hrtech:'HRTech',adtech:'AdTech',medtech:'MedTech',defencetech:'DefenceTech',deftech:'DefenceTech',traveltech:'TravelTech',ecommerce:'E-commerce'};
+      return m[lc]||s;
+      }
+      
+      // -- SECTOR FILTERS --------------------------------------------------------------
 function buildSectorFilters(){
-  const sectors=[...new Set(allDeals.map(d=>d.sector).filter(Boolean))].sort();
+  const sectors=[...new Set(allDeals.map(d=>normalizeSector(d.sector)).filter(Boolean))].sort();
   const cont=document.getElementById('sectorFilters');
   cont.innerHTML='<button class="filter-btn active" data-sector="all">All Sectors</button>'+
     sectors.map(s=>`<button class="filter-btn" data-sector="${esc(s)}">${esc(s)}</button>`).join('');
