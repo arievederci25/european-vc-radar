@@ -1105,8 +1105,7 @@ async function init(){
   // Create the Supabase client now that the deferred supabase-js bundle has executed.
   db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   getChartDefaults();
-  document.getElementById('lastUpdated').textContent = 'Updated May 12, 2026 (3,576 deals, \u20AC228B)';
-
+  ddocument.getElementById('lastUpdated').textContent = 'Updated Jun 1, 2026 (3,750 deals, €232B)';
   // Apply site inclusion policy at the visibility boundary: hide rows that
   // pre-date the scraper enforcement and have no confirmed amount. Documented
   // in the site footer ("Undisclosed-amount rounds are excluded").
