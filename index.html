@@ -844,7 +844,7 @@ footer{
         <div class="chart-wrap"><canvas id="avgStageChart"></canvas></div>
       </div>
       <div class="chart-card">
-        <div class="chart-label">Deal Velocity (deals per quarter)</div>
+        <div class="chart-label">Deal Velocity (deals per quarter &middot; full coverage since 2024)</div>
         <div id="velocityDelta" class="delta-bar"></div>
         <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-bottom:14px">
           <div id="velocityPills" style="display:flex;flex-wrap:wrap;gap:4px;flex:1"></div>
@@ -1518,7 +1518,9 @@ let velocitySelected = new Set();
 function buildVelocityPills(){
   const nowQ=Math.ceil((new Date().getMonth()+1)/3), nowY=new Date().getFullYear();
   const all=[];
-  for(let y=2020;y<=nowY;y++) for(let q=1;q<=4;q++){
+  // Deal counts start at 2024: earlier quarters only contain larger rounds
+  // (partial backfill), so showing their counts would misread as market growth.
+  for(let y=2024;y<=nowY;y++) for(let q=1;q<=4;q++){
     if(y===nowY&&q>nowQ) break;
     if(allDeals.some(d=>d.year===y&&d.quarter===q)) all.push(`${y}-${q}`);
   }
