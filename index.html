@@ -835,7 +835,7 @@ footer{
         <div class="chart-wrap"><canvas id="sizeChart"></canvas></div>
       </div>
       <div class="chart-card">
-        <div class="chart-label">Avg Round Size by Stage per Quarter (&euro;M)</div>
+        <div class="chart-label">Avg Round Size by Stage per Quarter (&euro;M &middot; full coverage since 2024)</div>
         <div id="avgStageDelta" class="delta-bar"></div>
         <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-bottom:14px">
           <div id="avgStagePills" style="display:flex;flex-wrap:wrap;gap:4px;flex:1"></div>
@@ -1426,10 +1426,11 @@ function scheduleLazyChartRender(el, fn, token){
 let avgStageSelected = new Set();
 
 function buildAvgStagePills(){
-  // All available quarters from allDeals
+  // Quarters from 2024 only: pre-2024 data holds just the larger rounds
+  // (partial backfill), which skews per-stage averages upward.
   const nowQ=Math.ceil((new Date().getMonth()+1)/3), nowY=new Date().getFullYear();
   const all=[];
-  for(let y=2020;y<=nowY;y++) for(let q=1;q<=4;q++){
+  for(let y=2024;y<=nowY;y++) for(let q=1;q<=4;q++){
     if(y===nowY&&q>nowQ) break;
     if(allDeals.some(d=>d.year===y&&d.quarter===q)) all.push(`${y}-${q}`);
   }
@@ -1621,7 +1622,10 @@ function renderTimelineChart(){
   const labels=quarters.map(({y,q})=>`Q${q}'${String(y).slice(2)}`);
   const gf=getGlobalFiltered();
   const capitals=quarters.map(({y,q})=>Math.round(gf.filter(d=>d.year===y&&d.quarter===q).reduce((s,d)=>s+(d.amount_eur||0),0)));
-  const deals=quarters.map(({y,q})=>gf.filter(d=>d.year===y&&d.quarter===q).length);
+  // Deal counts only from 2024: earlier quarters hold just the larger rounds
+  // (partial backfill), so plotting their counts misreads as market growth.
+  // Capital bars stay from 2020 — large rounds dominate capital, so those are reliable.
+  const deals=quarters.map(({y,q})=>y>=2024?gf.filter(d=>d.year===y&&d.quarter===q).length:null);
 
   // Highlight selected quarters
   const bgColors=quarters.map(({y,q})=>{
@@ -1633,7 +1637,7 @@ function renderTimelineChart(){
     type:'bar',
     data:{labels,datasets:[
       {type:'bar',label:'Capital (\u20ACM)',data:capitals,backgroundColor:bgColors,borderRadius:4,yAxisID:'y'},
-      {type:'line',label:'Deals',data:deals,borderColor:'#2d7dd2',backgroundColor:'rgba(45,125,210,.1)',borderWidth:2,pointRadius:3,fill:true,yAxisID:'y2',tension:.4}
+      {type:'line',label:'Deals (since 2024)',data:deals,borderColor:'#2d7dd2',backgroundColor:'rgba(45,125,210,.1)',borderWidth:2,pointRadius:3,fill:true,yAxisID:'y2',tension:.4}
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{labels:{font:{size:11}}}},
