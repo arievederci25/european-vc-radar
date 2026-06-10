@@ -1,1 +1,4 @@
 .claude/
+
+# Internal admin tool — keep private (would be public via GitHub Pages)
+admin-report.html
