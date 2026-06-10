@@ -48,6 +48,8 @@ For each deal found, collect:
 | `description` | One-sentence description of what the company does |
 | `year` | Calendar year as integer |
 | `quarter` | Quarter as integer 1–4 |
+| `announced_date` | Date the round was announced/closed, as `YYYY-MM-DD`. Take it from the source article (publication date is a reliable proxy when no explicit date is given). **Mandatory — never leave NULL.** |
+| `source_urls` | The URL(s) the deal was confirmed from, as a list. At least one is mandatory. |
 
 ---
 
@@ -462,11 +464,11 @@ WHERE company ILIKE '%{first_word}%'
 ### Step 3 — Insert new deals
 
 ```sql
-INSERT INTO deals (company, country, stage, amount_eur, sector, lead_investor, description, year, quarter)
-VALUES (...);
+INSERT INTO deals (company, country, stage, amount_eur, sector, lead_investor, description, year, quarter, announced_date, source_urls)
+VALUES (..., '2026-05-19', ARRAY['https://tech.eu/...']);
 ```
 
-`amount_eur` must be in millions. Use `ON CONFLICT (company, year, quarter) DO NOTHING`. Insert in batches. Log count inserted.
+`amount_eur` must be in millions. `announced_date` is a `YYYY-MM-DD` date and `source_urls` is a Postgres text array (`ARRAY['url1','url2']`) — **both are required on every row, never insert without them.** Use `ON CONFLICT (company, year, quarter) DO NOTHING`. Insert in batches. Log count inserted.
 
 ---
 
@@ -474,6 +476,11 @@ VALUES (...);
 
 - How many deals found, skipped (duplicates), inserted
 - List inserted companies with amount and country
+
+**Post-insert integrity check** — run this and confirm it returns `0`. If not, backfill the offending rows before continuing:
+```sql
+SELECT count(*) FROM deals WHERE year = {year} AND quarter = {quarter} AND (announced_date IS NULL OR source_urls IS NULL);
+```
 
 ---
 
