@@ -1,87 +1,41 @@
-# Silicon Canals Scrapers
+# Data scripts
 
-This directory contains scrapers for extracting funding deal data from Silicon Canals.
+Utility scripts for the European VC Radar Supabase `deals` table. New deals
+are added by the monthly **big scrape** (a Cowork routine — see
+`vc-radar-monthly-scrape.md` in the repo root), where Silicon Canals is one
+Tier 1 source among many. These scripts only export or enrich existing data.
+
+## Scripts
+
+| Script | What it does | How it runs |
+|---|---|---|
+| `export_deals_json.py` | Dumps all deals to `data/deals.json`, the static snapshot the site serves for fast loads. | Automated: `.github/workflows/rebuild-deals-snapshot.yml` (monthly, 2nd) + as the final step of the big scrape. Stdlib only — no install. |
+| `enrich_descriptions.py` | Fills in missing one-sentence company descriptions by re-reading the source article with Claude. | Manual, local. |
+| `enrich_null_amounts.py` | Re-extracts missing `amount_eur` values for deals that landed with a NULL amount. Updates the row if a confirmed amount ≥ €0.5M is found. | Manual, local. |
+| `export_null_amount_xlsx.py` | Exports every deal still missing an amount to `data/null_amount_deals.xlsx` for manual review. | Manual, local. |
 
 ## Inclusion policy
 
-Both scrapers enforce the rules published in the site footer:
-
-1. **Round size confirmed and ≥ €0.5M.** Deals with `amount_eur < 0.5` are skipped.
-2. **Undisclosed-amount rounds excluded.** Deals where the article doesn't state
-   a concrete amount (so the LLM returns `amount_eur: null`) are skipped.
-3. **EUR conversion.** USD/GBP amounts are converted to euros at the
-   approximate time-of-deal exchange rate by the extraction prompt.
-4. **Europe only.** The extraction prompt asks the LLM to return `null` if the
-   company isn't headquartered in the EU + UK + CH + NO + IS.
-
-The minimum amount threshold lives in one constant in each scraper:
+Deals are kept only when the round size is confirmed and **≥ €0.5M**.
+Undisclosed-amount rounds are excluded. The threshold lives in one constant
+per script:
 
 ```python
 MIN_AMOUNT_EUR_M = 0.5  # change here if the policy ever shifts
 ```
 
-## Scrapers
+## Running the manual scripts
 
-### `silicon_canals.py` - Regular Updates (RSS Feed)
-- **Purpose**: Fetch new funding articles from Silicon Canals RSS feed
-- **Schedule**: Monthly (1st of month at 07:00 UTC)
-- **Workflow**: `.github/workflows/scrape-silicon-canals.yml`
-- **Behavior**: 
-  - Fetches latest articles from the RSS feed
-  - Skips articles already in the database
-  - Extracts deal data using Claude
-  - Only processes articles with funding keywords
+```bash
+pip install -r scrapers/requirements.txt
+# set the environment variables below, then e.g.:
+python scrapers/enrich_null_amounts.py
+```
 
-### `silicon_canals_backfill.py` - Historical Data (One-Time or Manual)
-- **Purpose**: Backfill historical deals from Silicon Canals since 2020
-- **Schedule**: Manual trigger only (not automated)
-- **Workflow**: `.github/workflows/backfill-silicon-canals.yml`
-- **Behavior**:
-  - Scrapes the RSS feed for all available articles
-  - Filters articles from 2020 onwards
-  - Skips articles already in the database
-  - Extracts deal data using Claude
+`export_deals_json.py` needs no install (standard library only).
 
-## How to Run
+## Environment variables
 
-### Monthly Automatic Scraping
-The regular scraper runs automatically on the 1st of every month at 07:00 UTC.
-
-To trigger manually:
-1. Go to GitHub → Actions → "Scrape Silicon Canals"
-2. Click "Run workflow"
-
-### Historical Backfill
-To run the historical backfill (adds deals from 2020-present not yet in database):
-1. Go to GitHub → Actions → "Backfill Silicon Canals (Historical)"
-2. Click "Run workflow"
-
-This will process all articles from 2020 onwards and add any new deals to Supabase.
-
-## Environment Variables
-
-Both scrapers require:
-- `SUPABASE_URL` - Your Supabase project URL
-- `SUPABASE_KEY` - Your Supabase API key
-- `ANTHROPIC_API_KEY` - Your Anthropic API key
-
-These must be set as GitHub Secrets in your repository.
-
-## Dependencies
-
-See `requirements.txt` for required Python packages.
-
-## How It Works
-
-1. **Scraper Discovery**: Identifies articles with funding-related keywords
-2. **Duplicate Check**: Queries Supabase to skip articles already processed
-3. **Content Extraction**: Fetches article HTML and extracts text
-4. **AI Parsing**: Uses Claude to extract structured deal data (company, amount, stage, etc.)
-5. **Database Upsert**: Adds or updates deals in Supabase with deduplication
-
-## Error Handling
-
-- Articles that fail to fetch are skipped with a message
-- Articles that Claude cannot parse as funding rounds are skipped
-- Articles before 2020 are skipped by the backfill scraper
-- Duplicates are detected and skipped (based on source URL)
+- `SUPABASE_URL` — Supabase project URL (defaults to the production project)
+- `SUPABASE_KEY` (or `SUPABASE_ANON_KEY`) — Supabase anon key (read-only)
+- `ANTHROPIC_API_KEY` — only for the `enrich_*` scripts (they call Claude)
