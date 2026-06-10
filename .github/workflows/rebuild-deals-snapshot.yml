@@ -6,12 +6,14 @@ name: Rebuild deals.json snapshot
 # Tier 1 source). This job only reads the DB and rebuilds the snapshot;
 # no Anthropic tokens, no third-party scraping.
 #
-# Runs monthly as a safety net. After a manual big scrape, you can trigger
-# it immediately from the Actions tab ("Run workflow") to refresh the site.
+# Runs on the 2nd of the month — a day after the big scrape (a Cowork routine
+# that runs on the 1st) — so the snapshot always reflects that month's new
+# deals. After any manual scrape you can also trigger it immediately from the
+# Actions tab ("Run workflow") to refresh the site.
 
 on:
   schedule:
-    - cron: '0 8 1 * *'   # Monthly on the 1st at 08:00 UTC
+    - cron: '0 6 2 * *'   # Monthly on the 2nd at 06:00 UTC (day after the big scrape)
   workflow_dispatch:        # Allow manual trigger from the Actions tab
 
 permissions:
