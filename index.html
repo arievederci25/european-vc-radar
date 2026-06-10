@@ -128,6 +128,7 @@
   window.__dealsPromise = fetch('/data/deals.json', {cache: 'force-cache'})
     .then(r => {
       if (!r.ok) throw new Error('static deals.json missing: ' + r.status);
+      window.__dealsLastModified = r.headers.get('last-modified');
       return r.json();
     })
     .then(data => Array.isArray(data) && data.length ? data : viaSupabase())
@@ -1105,11 +1106,19 @@ async function init(){
   // Create the Supabase client now that the deferred supabase-js bundle has executed.
   db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   getChartDefaults();
-  document.getElementById('lastUpdated').textContent = 'Updated Jun 10, 2026 (3,823 deals, €234B)';
+  const loadedDeals = await loadAllDeals();
+  // Label derives from the data itself: deal count + capital from the loaded
+  // snapshot, date from the deals.json Last-Modified header (falls back to
+  // today when served via the live Supabase path, which is always current).
+  const totalBn = loadedDeals.reduce((s, d) => s + (Number(d.amount_eur) || 0), 0) / 1000;
+  const updatedAt = window.__dealsLastModified ? new Date(window.__dealsLastModified) : new Date();
+  document.getElementById('lastUpdated').textContent =
+    `Updated ${updatedAt.toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})} ` +
+    `(${loadedDeals.length.toLocaleString('en-US')} deals, €${Math.round(totalBn)}B)`;
   // Apply site inclusion policy at the visibility boundary: hide rows that
   // pre-date the scraper enforcement and have no confirmed amount. Documented
   // in the site footer ("Undisclosed-amount rounds are excluded").
-  allDeals = (await loadAllDeals()).filter(d => d.amount_eur != null && Number(d.amount_eur) >= 0.5);
+  allDeals = loadedDeals.filter(d => d.amount_eur != null && Number(d.amount_eur) >= 0.5);
   buildYearOverview();
   buildQuarterGrid();
   buildAvgStagePills();
