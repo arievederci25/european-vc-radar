@@ -1,0 +1,31 @@
+name: Supabase Keep-Alive
+
+# Pings Supabase every other day so the free-tier project is never
+# paused for inactivity (Supabase pauses after 7 days of no activity).
+# Deliberately dependency-free: no Python, no Anthropic — just one query.
+
+on:
+  schedule:
+    - cron: '0 6 */2 * *'   # 06:00 UTC, every 2nd day
+  workflow_dispatch:          # Allow manual trigger from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: |
+          echo "Pinging Supabase at $(date -u)…"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+            "$SUPABASE_URL/rest/v1/deals?select=id&limit=1" \
+            -H "apikey: $SUPABASE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_KEY")
+          echo "HTTP status: $STATUS"
+          if [ "$STATUS" != "200" ]; then
+            echo "Unexpected status — Supabase may be paused or misconfigured."
+            exit 1
+          fi
+          echo "Supabase is awake. ✅"
