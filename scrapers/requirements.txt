@@ -1,9 +1,4 @@
-# Dependencies for the manual data-maintenance scripts in this folder.
-# Note: export_deals_json.py uses only the Python standard library, so the
-# automated snapshot workflow needs no install. These packages are only
-# required for the manual enrich_* and export_null_amount_xlsx.py utilities.
-requests>=2.32.3
-beautifulsoup4>=4.12.3
-anthropic>=0.50.0
-cloudscraper>=1.2.71
-openpyxl>=3.1.0
+feedparser==6.0.11
+requests==2.32.3
+beautifulsoup4==4.12.3
+anthropic==0.40.0
