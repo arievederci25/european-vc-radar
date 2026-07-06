@@ -72,7 +72,12 @@ This enrichment step applies to **every tier** of sources.
 These are high-yield discovery sources. Fetch each URL, extract all deals from the last 30 days, and enrich any incomplete ones.
 
 - https://siliconcanals.com/
-- https://tech.eu
+- **tech.eu** — *do NOT rely on `https://tech.eu/category/news/` or clicking "More" on it.* That page has a known caching bug and can serve stale content from years ago even after paginating. Instead:
+  1. `WebSearch` for `tech.eu "European tech weekly recap" [month] [year]` to find that month's weekly recap articles (published most Mondays, URL pattern `tech.eu/YYYY/MM/DD/european-tech-weekly-recap-...`). There are ~4-5 per month, each covering the prior Mon-Sun week.
+  2. `WebFetch` each recap URL with a prompt like *"List every individual funding deal mentioned (company, country, amount, stage, lead investors, description, date). Include ALL companies, not just top ones. List exits/M&A separately."* — each recap lists 50-75+ deals in one fetch, far more efficient than paging the news feed article-by-article.
+  3. If a recap URL 404s from search results (e.g. published too recently to be indexed), get the exact slug from the tech.eu homepage: `find` the article link by its title, then `read_page` with that `ref_id` to read its `href` (don't just click it — clicking has been unreliable for navigating to fresh homepage links).
+  4. tech.eu also publishes a monthly summary article ("[X] deals, [trend]: European startup funding in [month] [year]") — it's aggregate stats only (total deals, biggest deal, top sector/country), not a per-company list, so it's useful only as a sanity check on total deal count, not for extraction.
+  5. Watch for: pure debt/credit facilities (exclude per the debt-only rule below), and strategic minority-stake purchases into already-mature companies (e.g. a state fund buying a small stake in an existing unicorn) — these aren't startup fundraises and should be excluded even if tech.eu covers them.
 - https://sifted.eu
 - https://eu-startups.com
 - https://vestbee.com/insights/articles/ *(fetch the most recent monthly CEE article, e.g. `top-european-funding-rounds-closed-in-[month]-[year]`)*
@@ -678,6 +683,21 @@ async function generatePDF() {
 </body>
 </html>
 ```
+
+---
+
+### Step 5b — Auto-export infographic to PDF (best-effort via Chrome)
+
+The HTML file already has a built-in "Download als PDF" button (html2canvas + jsPDF) that renders a pixel-perfect PDF the moment a human clicks it in a real browser — that stays the reliable fallback if the automated export below doesn't work this run.
+
+To also produce an actual `.pdf` file automatically, without waiting for a click:
+
+1. Load the Chrome tools if not already available: `ToolSearch` with `select:mcp__claude-in-chrome__list_connected_browsers,mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__tabs_create_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__javascript_tool`.
+2. Call `list_connected_browsers`. If none is connected, **skip this step entirely** — note "PDF auto-export skipped (no Chrome connected this run)" in the Step 4 report and move on to Step 6. Do not block or retry.
+3. If connected: `tabs_context_mcp` (createIfEmpty: true) → `tabs_create_mcp` a new tab → `navigate` to `file:///C:/Users/ab/Desktop/.claude/european-vc-radar/infographic-q{quarter}-{year}.html`.
+4. Wait ~2s for the Google Font and scripts to load, then call `javascript_tool` to run `generatePDF()` directly on the page (more reliable than pixel-clicking the button). Poll every second for up to 15s until the button's text reverts to "Download als PDF" — that means the export finished and the browser started the download.
+5. The browser saves `vc-radar-q{quarter}-{year}.pdf` to the default Downloads folder (typically `C:\Users\ab\Downloads\`). Locate that file and copy it into the project folder as `C:\Users\ab\Desktop\.claude\european-vc-radar\infographic-q{quarter}-{year}.pdf`.
+6. If any part of this fails (browser error, download not found within ~20s, etc.), don't block the task — note the failure in the Step 4 report and rely on the in-page button as fallback. Close the tab either way when done.
 
 ---
 
