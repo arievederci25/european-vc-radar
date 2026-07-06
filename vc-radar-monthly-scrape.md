@@ -455,10 +455,10 @@ Skip companies already present for the same year+quarter.
 
 **Fuzzy name rule:** If a similar name exists (e.g. "Aikido" vs "Aikido Security") with matching amount and country, treat as duplicate — keep the fuller name.
 
-**Cross-quarter rule:** If a company appears in the previous quarter with an amount within ~20%, treat it as the same deal (announced vs closed timing). Keep the earlier entry.
+**Cross-quarter rule:** If a company appears in the previous quarter with an amount within ~20%, treat it as the same deal (announced vs closed timing). Keep the earlier entry — **unless** the earlier entry has `source_urls IS NULL` or its description reads like a rumor/target ("seeking", "in talks", "targeting a valuation of") while the newer one is a properly sourced close. In that case the earlier row is a rumor artifact, not a real duplicate to preserve: delete it and keep the sourced one, even if the amounts differ by more than 20% (rumored targets vs. actual close size often diverge a lot — e.g. NEURA Robotics was logged in Q1 as "seeking €4B valuation" at €1000M with no source, then actually closed in Q2 at €1288M/$1.4B with a full investor list; the Q1 row was deleted).
 
 ```sql
-SELECT id, company, year, quarter, amount_eur FROM deals
+SELECT id, company, year, quarter, amount_eur, source_urls, description FROM deals
 WHERE company ILIKE '%{first_word}%'
   AND ((year = {year} AND quarter IN ({quarter}, {quarter}-1))
     OR (year = {year}-1 AND quarter = 4 AND {quarter} = 1));
@@ -469,11 +469,17 @@ WHERE company ILIKE '%{first_word}%'
 ### Step 3 — Insert new deals
 
 ```sql
-INSERT INTO deals (company, country, stage, amount_eur, sector, lead_investor, description, year, quarter, announced_date, source_urls)
-VALUES (..., '2026-05-19', ARRAY['https://tech.eu/...']);
+INSERT INTO deals (company, country, stage, amount_eur, sector, lead_investor, description, year, quarter, announced_date, source_urls, amount_display)
+VALUES (..., '2026-05-19', ARRAY['https://tech.eu/...'], '€65.5M');
 ```
 
-`amount_eur` must be in millions. `announced_date` is a `YYYY-MM-DD` date and `source_urls` is a Postgres text array (`ARRAY['url1','url2']`) — **both are required on every row, never insert without them.** Use `ON CONFLICT (company, year, quarter) DO NOTHING`. Insert in batches. Log count inserted.
+`amount_eur` must be in millions. `announced_date` is a `YYYY-MM-DD` date and `source_urls` is a Postgres text array (`ARRAY['url1','url2']`) — **both are required on every row, never insert without them.**
+
+**`amount_display` — always set this explicitly, on every row, it does not auto-generate:**
+- Below €1000M: `'€' + amount_eur rounded to 1 decimal + 'M'`, trailing `.0` stripped (e.g. `65.5` → `'€65.5M'`, `120.0` → `'€120M'`).
+- €1000M and above: convert to billions, 1 decimal, trailing `.0` stripped, unit `'B'` (e.g. `1288` → `'€1.3B'`, `1000` → `'€1B'`, `2000` → `'€2B'`). Never leave a ≥€1000M deal displaying as `'€XXXXM'` — the site shows `amount_display` verbatim if set, so a missing or wrong value here is what caused deals like NEURA Robotics to render as "1288M" instead of "1.3B".
+
+Use `ON CONFLICT (company, year, quarter) DO NOTHING`. Insert in batches. Log count inserted.
 
 ---
 
