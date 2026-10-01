@@ -111,7 +111,7 @@ def parse_date(pub_date_str):
 
 
 def already_tracked(url):
-    rows = supabase_get("deals", f"source_urls=cs.%5B%22{requests.utils.quote(url)}%22%5D&select=id")
+    rows = supabase_get("deals", f"source_urls=cs.%5B%22{requests.utils.quote(url, safe='')}%22%5D&select=id")
     return len(rows) > 0
 
 
@@ -128,36 +128,41 @@ def main():
         url = entry.get("link", "")
         title = entry.get("title", "")
 
-        funding_keywords = ["secures", "raises", "funding", "million", "invest", "round", "capital", "seed", "series"]
-        if not any(k in title.lower() for k in funding_keywords):
+        try:
+            funding_keywords = ["secures", "raises", "funding", "million", "invest", "round", "capital", "seed", "series"]
+            if not any(k in title.lower() for k in funding_keywords):
+                skipped += 1
+                continue
+
+            if already_tracked(url):
+                print(f"  Already tracked: {title[:60]}")
+                skipped += 1
+                continue
+
+            print(f"Processing: {title[:70]}")
+            text = fetch_article_text(url)
+            deal = extract_deal(title, text, url, entry.get("published", ""))
+
+            if not deal:
+                print(f"  Not a funding round, skipping")
+                skipped += 1
+                continue
+
+            year, quarter, announced_date = parse_date(entry.get("published", ""))
+            deal.update({
+                "year": year,
+                "quarter": quarter,
+                "announced_date": announced_date,
+                "source_urls": [url],
+            })
+
+            print(f"  -> {deal.get('company')} | {deal.get('amount_display')} | {deal.get('stage')} | {deal.get('country')}")
+            supabase_upsert("deals", [deal])
+            new_deals += 1
+        except Exception as e:
+            print(f"  Error processing '{title[:60]}': {e}")
             skipped += 1
             continue
-
-        if already_tracked(url):
-            print(f"  Already tracked: {title[:60]}")
-            skipped += 1
-            continue
-
-        print(f"Processing: {title[:70]}")
-        text = fetch_article_text(url)
-        deal = extract_deal(title, text, url, entry.get("published", ""))
-
-        if not deal:
-            print(f"  Not a funding round, skipping")
-            skipped += 1
-            continue
-
-        year, quarter, announced_date = parse_date(entry.get("published", ""))
-        deal.update({
-            "year": year,
-            "quarter": quarter,
-            "announced_date": announced_date,
-            "source_urls": [url],
-        })
-
-        print(f"  -> {deal.get('company')} | {deal.get('amount_display')} | {deal.get('stage')} | {deal.get('country')}")
-        supabase_upsert("deals", [deal])
-        new_deals += 1
 
     print(f"\nDone. New deals added: {new_deals}, skipped: {skipped}")
 
